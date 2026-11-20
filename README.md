@@ -12,7 +12,12 @@ Context repo for AI assistants: a procedural generator plus its generated assets
     transforms). Barrel points -Z, grip + stock + side steam tank. Anims: `idle`, `fire`, `spinup`, `reload`.
   - `steam_elytra` — the Create-style fan wings + module with a leather harness, wearable on their own in the chest
     slot (GeckoLib armor geo, content under `armorBody`, other armor bones empty). Anims: `idle`, `elytra_deploy`,
-    `elytra_glide`, `elytra_fold`.
+    `elytra_glide`, `elytra_fold`, `elytra_charge`, `elytra_charged`.
+  - **Kinetic charging port** (both `steam_elytra` and `steam_armor_elytra`): a Create-style shaft input at the bottom
+    of the module's back face, for charging the elytra with rotational (kinetic) energy. Bones: `kinetic_port`
+    (mount point where the shaft connects, pivot `0, 14, 7.5`), `kinetic_shaft` (stub, spins about Z),
+    `charge_bar` (glowing bar above the implant socket, pivot at its left end - set scale X = charge 0..1 from code).
+    `elytra_charge` = plugged in and charging (shaft spins, bar fills), `elytra_charged` = full bar pulsing.
 - `output/` — generated assets in GeckoLib `DefaultedItemGeoModel` layout (`geo/armor`, `animations/armor`,
   `textures/armor`, `textures/item`, `models/item`).
 - `tools/preview/` — renders of the model (front/side/back/3-4 views, texture sheets, animation frames) for visual checks.

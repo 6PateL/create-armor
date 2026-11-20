@@ -222,7 +222,10 @@ EL_PANELS = len(EL_FOLD)
 def build_elytra(m, GEARS):
     """Mechanical fan-wings in Create style: andesite casing module with brass trim, andesite shafts,
     wooden cogwheels at the hinges and windmill-sail canvas panels in brass frames.
-    `implant_socket` is an empty mount bone in the middle of the module for implants (code side)."""
+    `implant_socket` is an empty mount bone in the middle of the module for implants (code side).
+    Kinetic input (charging with Create rotational force): a brass-collared shaft port at the bottom of the module's
+    back face - `kinetic_port` (mount point where a shaft connects), `kinetic_shaft` (stub, spins about Z) - and a
+    glowing charge bar `charge_bar` above the implant socket (pivot at its left end: scale X = charge 0..1)."""
     B, E = "armorBody", "elytra_module"
     HX, HY, HZ = EL_HINGE
     m.bone(E, B, (0, 18, 5))
@@ -231,6 +234,18 @@ def build_elytra(m, GEARS):
     m.box(E, -4.0, 13.2, 3.0, 4.0, 14.2, 6.8, "brass_casing")                # brass trim bottom
     m.box(E, -1.7, 15.3, 6.6, 1.7, 20.7, 7.0, "socket")                      # implant socket (glowing port)
     m.bone("implant_socket", E, (0, 18, 7.0))
+    # kinetic input port: brass collar with a dark bore, andesite shaft stub sticking out backwards
+    m.box(E, -1.4, 12.9, 6.6, 1.4, 15.1, 7.5, "brass", faces={"south": "kinetic_port"})   # collar
+    m.box(E, -1.0, 12.6, 6.6, 1.0, 12.9, 7.3, "andesite")                                  # collar foot
+    m.bone("kinetic_port", E, (0, 14.0, 7.5))
+    m.bone("kinetic_shaft", "kinetic_port", (0, 14.0, 7.5))
+    m.box("kinetic_shaft", -0.4, 13.6, 7.0, 0.4, 14.4, 8.6, "shaft")                       # shaft stub
+    m.box("kinetic_shaft", -0.55, 13.45, 8.1, 0.55, 14.55, 8.4, "brass")                   # coupling ring
+    # charge meter: dark tube frame + glowing bar that code/anim scales from the bottom
+    # (horizontal, above the implant socket, in the gap the folded wings leave open)
+    m.box(E, -1.65, 20.95, 6.6, 1.65, 22.25, 6.85, "iron_dark")                            # meter frame
+    m.bone("charge_bar", E, (-1.45, 21.6, 6.9))
+    m.box("charge_bar", -1.45, 21.15, 6.85, 1.45, 22.05, 6.95, "charge")
     for sx in (-1, 1):
         x0, x1 = sorted((sx * 3.8, sx * 5.9))
         m.box(E, x0, 21.9, 5.4, x1, 23.1, 7.0, "andesite")                   # hinge bracket
@@ -547,12 +562,12 @@ PAL = {  # material -> base colour
     # Create-style elytra
     "andesite": (146, 148, 142), "shaft": (150, 152, 146), "cog_wood": (156, 114, 68), "cog_hub": (120, 122, 118),
     "andesite_casing": (146, 148, 142), "brass_casing": (196, 160, 72), "canvas": (226, 216, 190),
-    "socket": (196, 160, 72),
+    "socket": (196, 160, 72), "kinetic_port": (196, 160, 72), "charge": (90, 220, 255),
 }
 WEATHERED = {"brass", "brass_plate", "gear", "iron", "iron_plate", "iron_dark", "chimney", "sole", "cannon_face"}
 RIVETED = {"brass_plate", "iron_plate", "copper_plate", "cannon_face"}
 CYLINDER = {"pipe", "canister", "rod", "chimney", "copper", "barrel", "shaft"}
-NO_BEVEL = {"glass", "gauge", "steam", "chimney_hole", "gear", "cog_wood", "flash", "muzzle", "canvas", "socket",
+NO_BEVEL = {"glass", "kinetic_port", "charge", "gauge", "steam", "chimney_hole", "gear", "cog_wood", "flash", "muzzle", "canvas", "socket",
             "andesite_casing", "brass_casing"}
 CASING = {"andesite_casing": ((150, 152, 146), (120, 86, 54)),      # frame colour, plank colour (Create casings)
           "brass_casing": ((206, 170, 78), (78, 54, 38))}
@@ -728,6 +743,26 @@ def paint_face(px, gx, rect, mat, face, cube, rng):
                         c = shade(base, (0.95 if (u + v) % 2 else 1.02) * (1.04 - 0.1 * v / max(1, h - 1)))
                 else:
                     c = shade(wood, rng.uniform(0.85, 1.0))
+                put(u, v, c)
+    elif mat == "charge":                                                       # kinetic charge bar (glows)
+        for v in range(h):
+            for u in range(w):
+                c = mix((40, 170, 240), (200, 250, 255), u / max(1, w - 1))
+                if u % 3 == 2 and 0 < u < w - 1:
+                    c = shade(c, 0.7)                                          # segment lines
+                put(u, v, c)
+                gx[x0 + u, y0 + v] = c + (255,)
+    elif mat == "kinetic_port":                                                 # shaft bore: brass ring, dark hole
+        cu, cv = (w - 1) / 2, (h - 1) / 2
+        for v in range(h):
+            for u in range(w):
+                d = max(abs(u - cu), abs(v - cv))
+                c = shade(PAL["brass"], 1.1 if d >= min(w, h) / 2 - 1 else 0.85)
+                if d < min(w, h) / 2 - 1.5:
+                    c = (26, 22, 20)
+                    if d >= min(w, h) / 2 - 2.5:
+                        c = (40, 150, 220)                                     # charge ring
+                        gx[x0 + u, y0 + v] = c + (150,)
                 put(u, v, c)
     elif mat == "socket":                                                       # implant port: brass rim, dark bay
         for v in range(h):
@@ -1132,6 +1167,23 @@ def make_animations(m):
         anims["elytra_deploy"] = dict(fn=deploy, length=0.9, dt=0.05, loop="hold_on_last_frame")
         anims["elytra_glide"] = dict(fn=glide, length=2.0, dt=0.1, loop=True)
         anims["elytra_fold"] = dict(fn=fold, length=0.8, dt=0.05, loop=False)
+
+        def charge(t):  # loop 3s: plugged into a Create shaft - stub spins, hinge cogs tick, bar fills and flickers
+            out = {}
+            add(out, "kinetic_shaft", (0, 0, 360 * t))
+            add(out, "elytra_cog_r_drive", (0, 0, -60 * t))
+            add(out, "elytra_cog_l_drive", (0, 0, 60 * t))
+            k = max(0.02, smooth(t / 2.6)) * (1 + 0.03 * math.sin(TAU * t * 6))
+            add(out, "charge_bar", scl=(min(1.0, k), 1, 1))
+            return out
+
+        def charged(t):  # loop 2s: full bar pulses gently (no shaft)
+            out = {}
+            add(out, "charge_bar", scl=(0.97 + 0.03 * math.sin(TAU * t / 2.0), 1, 1))
+            return out
+
+        anims["elytra_charge"] = dict(fn=charge, length=3.0, dt=0.05, loop=True)
+        anims["elytra_charged"] = dict(fn=charged, length=2.0, dt=0.1, loop=True)
     return anims
 
 
