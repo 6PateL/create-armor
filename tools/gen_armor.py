@@ -253,7 +253,124 @@ def build_elytra(m, GEARS):
     m.mirror(W, lambda s: s.replace("Right", "Left").replace("_r_", "_l_"))
 
 
+# ---------------------------------------------------------------------------- standalone models
+FACE_ROT_X90 = {"north": "up", "up": "south", "south": "down", "down": "north", "east": "east", "west": "west"}
+
+
+def extract(src, roots, root_name, root_pivot, xform=None, offset=(0, 0, 0)):
+    """New Model holding the subtrees `roots` of `src` re-parented under a fresh root bone.
+    xform='x90' maps (x, y, z) -> (x, -z, y): what pointed down (-Y) now points forward (-Z)."""
+    m = Model()
+    ox, oy, oz = offset
+
+    def P(p):
+        x, y, z = p
+        if xform == "x90":
+            x, y, z = x, -z, y
+        return [x + ox, y + oy, z + oz]
+
+    m.bone(root_name, None, root_pivot)
+    keep, frontier = set(), list(roots)
+    while frontier:
+        n = frontier.pop()
+        keep.add(n)
+        frontier += [b["name"] for b in src.bones if b["parent"] == n]
+    for b in src.bones:
+        if b["name"] not in keep:
+            continue
+        nb = m.bone(b["name"], root_name if b["name"] in roots else b["parent"], P(b["pivot"]), b["rotation"])
+        for c in b["cubes"]:
+            a = P(c["origin"])
+            e = P([c["origin"][i] + c["size"][i] for i in range(3)])
+            lo = [min(a[i], e[i]) for i in range(3)]
+            hi = [max(a[i], e[i]) for i in range(3)]
+            faces = {(FACE_ROT_X90[k] if xform == "x90" else k): v for k, v in c["faces"].items()}
+            m.box(nb["name"], *lo, *hi, c["mat"], faces)
+    m.gears = [g for g in src.gears if g[0] in keep]
+    m.steam = []
+    return m
+
+
+def build_cannon_item():
+    """Standalone steam cannon (GeckoLib item, geo/item): the cannon from the arm-cannon variant taken off the
+    arm, turned so the barrel points forward (-Z), window/sight on top, with a grip, shoulder brace and a short
+    hose ending in a tank. Item origin: x=z=0 is the block centre, y=0 its bottom.
+      steam_cannon > arm_cannon (housing) > cannon_barrel (recoil / break-open) > cannon_flash, cannon_shell
+                                          > gear_cannon, cannon_vent
+                   > cannon_grip, cannon_hose"""
+    src = build("cannon")
+    # the lower hose + valve collar ran up the arm; the item gets its own tank + feed pipe instead
+    src.by["arm_cannon"]["cubes"] = [c for c in src.by["arm_cannon"]["cubes"]
+                                     if not (c["origin"][1] >= 12.0 - 1e-6 and c["origin"][2] >= 3.2 - 1e-6)]
+    # old cannon centre x=-6, barrel axis z=0, housing y 9..14.8 -> centre on the item origin
+    m = extract(src, ["arm_cannon"], "steam_cannon", (0, 2, 0), xform="x90", offset=(6, 2.0, -10.0))
+    C = "steam_cannon"
+    # after the transform: housing x -3.3..3.3, y -1.3..5.3, z -1..4.8; barrel z -6.6..-1
+    m.bone("cannon_grip", C, (0, 0, 2))
+    m.box("cannon_grip", -0.9, -4.6, 1.2, 0.9, -1.3, 3.0, "leather")             # pistol grip
+    m.box("cannon_grip", -1.1, -2.0, 1.0, 1.1, -1.3, 3.2, "copper")              # grip collar
+    m.box("cannon_grip", -1.0, -4.9, 1.1, 1.0, -4.5, 3.1, "iron_dark")           # pommel cap
+    m.box("cannon_grip", -0.3, -2.4, -0.6, 0.3, -1.3, 1.0, "iron_dark")          # trigger guard front
+    m.box("cannon_grip", -0.3, -2.4, -0.6, 0.3, -2.0, 1.2, "iron_dark")          # trigger guard bottom
+    m.bone("cannon_trigger", "cannon_grip", (0, -1.4, 0.4))
+    m.box("cannon_trigger", -0.2, -2.0, 0.2, 0.2, -1.3, 0.6, "brass")
+    m.box(C, -2.2, 0.4, 4.8, 2.2, 4.4, 7.4, "iron_plate")                        # stock / shoulder brace
+    m.box(C, -2.5, 0.0, 7.4, 2.5, 4.8, 8.0, "leather", faces={"south": "leather_dark"})  # butt pad
+    m.box(C, -2.4, 3.6, 4.7, 2.4, 4.2, 7.5, "copper")                            # stock band
+    m.bone("cannon_hose", C, (2, 1.5, 6))
+    m.box("cannon_hose", 2.2, 1.6, 5.2, 4.0, 4.0, 7.6, "canister")               # side steam tank
+    m.box("cannon_hose", 2.1, 3.6, 5.1, 4.1, 4.1, 7.7, "copper")
+    m.box("cannon_hose", 2.1, 1.5, 5.1, 4.1, 2.0, 7.7, "copper")
+    m.box("cannon_hose", 2.9, 2.4, 3.6, 3.5, 3.0, 5.2, "pipe")                   # feed pipe into the housing
+    for b in m.bones:  # lift so the lowest point (pommel) sits at y=0
+        b["pivot"][1] += 4.9
+        for c in b["cubes"]:
+            c["origin"][1] += 4.9
+    m.variant = "cannon_item"
+    return m
+
+
+def build_elytra_item():
+    """Standalone Create-style elytra (wearable on its own, GeckoLib armor geo): the module + fan wings from the
+    elytra variant, plus a harness so it sits on a bare player body. Only armorBody has content; the other
+    armor bones are empty so GeoArmorRenderer finds them all."""
+    src = build("elytra")
+    m = Model()
+    for name, pivot in (("armorHead", (0, 24, 0)), ("armorBody", (0, 24, 0)), ("armorRightArm", (-5, 22, 0)),
+                        ("armorLeftArm", (5, 22, 0)), ("armorRightLeg", (-1.9, 12, 0)),
+                        ("armorLeftLeg", (1.9, 12, 0)), ("armorRightBoot", (-1.9, 12, 0)),
+                        ("armorLeftBoot", (1.9, 12, 0))):
+        m.bone(name, None, pivot)
+    sub = extract(src, ["elytra_module", "elytraRightWing", "elytraLeftWing"], "_tmp", (0, 0, 0))
+    for b in sub.bones[1:]:
+        b["parent"] = "armorBody" if b["parent"] == "_tmp" else b["parent"]
+        m.bones.append(b)
+        m.by[b["name"]] = b
+    B = "armorBody"
+    m.bone("elytra_harness", B, (0, 24, 0))
+    H = "elytra_harness"
+    m.box(H, -3.8, 13.6, 2.0, 3.8, 23.0, 3.2, "andesite")                        # mounting plate on the back
+    for sx in (-1, 1):
+        x0, x1 = sorted((sx * 1.6, sx * 3.0))
+        m.box(H, x0, 24.0, -2.4, x1, 24.5, 2.4, "leather")                      # over the shoulders
+        m.box(H, x0, 15.0, -2.5, x1, 24.0, -2.0, "leather")                     # front straps
+        m.box(H, x0, 20.0, 2.0, x1, 24.0, 2.4, "leather")                       # back, up to the plate
+        m.box(H, x0 - 0.1, 21.0, -2.7, x1 + 0.1, 21.8, -1.9, "brass")           # strap buckles
+    m.box(H, -4.4, 12.6, -2.5, 4.4, 14.2, 2.4, "leather")                        # waist belt
+    m.box(H, -1.0, 12.4, -2.8, 1.0, 14.4, -2.5, "copper_plate")                  # belt buckle
+    m.box(H, -1.6, 18.2, -2.7, 1.6, 19.0, -2.4, "leather_dark")                  # chest strap
+    m.box(H, -0.6, 17.9, -2.9, 0.6, 19.3, -2.6, "brass")                         # chest clasp
+    m.gears = [g for g in src.gears if g[0] in m.by]
+    m.steam = []
+    m.variant = "elytra_item"
+    return m
+
+
 def build(variant="base"):
+    if variant == "cannon_item":
+        return build_cannon_item()
+    if variant == "elytra_item":
+        return build_elytra_item()
     m = Model()
     Model._mirrored = set()
     GEARS = []  # (bone, axis, speed deg/s)
@@ -915,7 +1032,71 @@ def make_animations(m):
         anims["cannon_reload"] = dict(fn=reload, length=1.9, dt=0.02, loop=False)
         anims["cannon_spinup"] = dict(fn=spinup, length=1.0, dt=0.05, loop=True)
 
-    if m.variant == "elytra":
+    if m.variant == "cannon_item":
+        # standalone cannon: barrel points -Z, breech hinge on top. One controller for all of these.
+        anims = {}
+
+        def cog(out, a):
+            add(out, "gear_cannon", (-a, 0, 0))
+
+        def ci_idle(t):         # loop 4s: cog ticks over, tank breathes a little
+            out = {}
+            cog(out, 45 * t)
+            add(out, "cannon_hose", scl=(1, 1 + 0.02 * math.sin(TAU * t / 4.0), 1))
+            return out
+
+        def ci_fire(t):         # 0.6s: trigger pull, barrel kicks back, muzzle flash, cog jumps
+            out = {}
+            rec = t / 0.04 if t < 0.04 else max(0.0, 1 - (t - 0.04) / 0.4) ** 2
+            cog(out, 200 * smooth(t / 0.5))
+            add(out, "cannon_trigger", (-25 * max(0.0, 1 - abs(t - 0.03) / 0.12), 0, 0))
+            add(out, "cannon_barrel", pos=(0, 0, 1.4 * rec))
+            add(out, "steam_cannon", (-6 * rec, 0, 0), pos=(0, 0, 0.5 * rec))   # whole gun kicks up/back
+            if 0.01 <= t < 0.14:
+                k = 2.4 - 6 * (t - 0.01)
+                add(out, "cannon_flash", pos=(0, 0, -3.5), scl=(k, k, k * 1.3))
+            return out
+
+        def ci_spinup(t):       # loop 1s: charging - cog races, barrel shivers
+            out = {}
+            cog(out, 720 * t)
+            add(out, "cannon_barrel", pos=(0.08 * math.sin(TAU * t * 10), 0.1 * math.sin(TAU * t * 7), 0))
+            return out
+
+        # reload 1.5s: barrel breaks open downward, spent shell pops up and out, fresh one drops in, snap shut, vent
+        def ci_brk(t):
+            return smooth(t / 0.25) if t < 1.05 else 1 - min(1.0, (t - 1.05) / 0.1) ** 2
+
+        def ci_reload(t):
+            out = {}
+            cog(out, 220 * smooth(t / 0.3) + 300 * smooth((t - 1.05) / 0.3))
+            add(out, "cannon_barrel", (35 * ci_brk(t), 0, 0), pos=(0, 0, -0.4 * max(0.0, 1 - abs(t - 1.17) / 0.06)))
+            if 0.3 <= t < 0.6:                                   # spent shell flies up and back
+                e = (t - 0.3) / 0.3
+                k = 1.0 if e < 0.7 else (1 - e) / 0.3
+                add(out, "cannon_shell", (420 * e, 0, 0), pos=(0, 6.5 * e - 4.0 * e * e, 4.0 * e), scl=(k, k, k))
+            elif 0.6 <= t < 0.65:
+                add(out, "cannon_shell", scl=(0, 0, 0))
+            elif 0.65 <= t < 1.0:                                # fresh cartridge appears above and drops in
+                e = (t - 0.65) / 0.35
+                k = min(1.0, e / 0.2)
+                add(out, "cannon_shell", pos=(0, 3.5 * (1 - smooth(e)), 0.8 * (1 - smooth(e))), scl=(k, k, k))
+            if 1.12 <= t < 1.5:                                  # steam vents out of the left side
+                e = (t - 1.12) / 0.38
+                k = 1.0 + 2.4 * e if e < 0.8 else (1 - e) / 0.2 * 2.92
+                add(out, "cannon_vent", pos=(2.5 + 2.5 * e, 1.5 * e, 0), scl=(k, k, k))
+            return out
+
+        anims["idle"] = dict(fn=ci_idle, length=4.0, dt=0.25, loop=True)
+        anims["fire"] = dict(fn=ci_fire, length=0.6, dt=0.02, loop=False)
+        anims["spinup"] = dict(fn=ci_spinup, length=1.0, dt=0.05, loop=True)
+        anims["reload"] = dict(fn=ci_reload, length=1.5, dt=0.02, loop=False)
+        return anims
+
+    if m.variant == "elytra_item":
+        del anims["overdrive"]
+
+    if m.variant in ("elytra", "elytra_item"):
         def wings(out, p, sweep, flutter=0.0, t=0.0, cog=0.0):
             """p[k] in 0..1 per panel (0 folded, 1 spread). Left wing mirrors the right."""
             for k in range(EL_PANELS):
@@ -1103,6 +1284,7 @@ ICONS = {
         "................",
     ],
 }
+ICONS["steam_elytra"] = ICONS["steam_elytra_module"]   # standalone wearable elytra uses the same icon
 ICON_PAL.update({"y": (214, 168, 40), "a": (150, 152, 146), "x": (40, 34, 30)})
 
 
@@ -1189,7 +1371,20 @@ def render(model, tex, glow, uv, mats, eye, scale=24, title=None, bounds=None, h
 
 # ============================================================================ main
 VARIANTS = [("steam_armor", "base", "armor"), ("steam_armor_cannon", "cannon", "cannon"),
-            ("steam_armor_elytra", "elytra", "elytra")]
+            ("steam_armor_elytra", "elytra", "elytra"),
+            ("steam_cannon", "cannon_item", "cannon_item"),     # standalone cannon, GeckoLib item (geo/item)
+            ("steam_elytra", "elytra_item", "elytra_item")]     # standalone wearable elytra (geo/armor)
+ITEM_VARIANTS = {"cannon_item"}
+CANNON_ITEM_DISPLAY = {  # models/item/steam_cannon.json (builtin/entity -> GeoItemRenderer)
+    "thirdperson_righthand": {"rotation": [0, 180, 0], "translation": [0, 2, -1], "scale": [0.6, 0.6, 0.6]},
+    "thirdperson_lefthand": {"rotation": [0, 180, 0], "translation": [0, 2, -1], "scale": [0.6, 0.6, 0.6]},
+    "firstperson_righthand": {"rotation": [0, 175, 0], "translation": [1, 1, -2], "scale": [0.6, 0.6, 0.6]},
+    "firstperson_lefthand": {"rotation": [0, 185, 0], "translation": [-1, 1, -2], "scale": [0.6, 0.6, 0.6]},
+    "ground": {"translation": [0, 2, 0], "scale": [0.4, 0.4, 0.4]},
+    "gui": {"rotation": [30, 135, 0], "translation": [0, -1.5, 0], "scale": [0.55, 0.55, 0.55]},
+    "head": {"rotation": [0, 180, 0], "translation": [0, 13, 7], "scale": [1, 1, 1]},
+    "fixed": {"rotation": [0, 90, 0], "translation": [0, -1, 0], "scale": [0.7, 0.7, 0.7]},
+}
 
 
 def main():
@@ -1217,17 +1412,22 @@ def run_variant(variant, prefix):
     print(f"bones {len(m.bones)}, cubes {sum(len(b['cubes']) for b in m.bones)}, texture {TEX}, rows used {used}")
 
     dirs = {k: os.path.join(OUT, *k.split("/")) for k in
-            ("geo/armor", "animations/armor", "textures/armor", "textures/item", "models/item")}
+            ("geo/armor", "animations/armor", "textures/armor", "geo/item", "animations/item", "textures/item",
+             "models/item")}
     for d in dirs.values():
         os.makedirs(d, exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    export_geo(m, uv, os.path.join(dirs["geo/armor"], f"{NAME}.geo.json"))
-    tex.save(os.path.join(dirs["textures/armor"], f"{NAME}.png"))
-    glow.save(os.path.join(dirs["textures/armor"], f"{NAME}_glowmask.png"))
-    anims = export_animations(m, os.path.join(dirs["animations/armor"], f"{NAME}.animation.json"))
+    kind = "item" if variant in ITEM_VARIANTS else "armor"
+    export_geo(m, uv, os.path.join(dirs[f"geo/{kind}"], f"{NAME}.geo.json"))
+    tex.save(os.path.join(dirs[f"textures/{kind}"], f"{NAME}.png"))
+    glow.save(os.path.join(dirs[f"textures/{kind}"], f"{NAME}_glowmask.png"))
+    anims = export_animations(m, os.path.join(dirs[f"animations/{kind}"], f"{NAME}.animation.json"))
     modid = "flesh_spread"
     if "--modid" in sys.argv:
         modid = sys.argv[sys.argv.index("--modid") + 1]
+    if kind == "item":
+        with open(os.path.join(dirs["models/item"], f"{NAME}.json"), "w", encoding="utf-8") as fh:
+            json.dump({"parent": "builtin/entity", "gui_light": "front", "display": CANNON_ITEM_DISPLAY}, fh, indent=2)
     sheet = Image.new("RGBA", (136 * len(ICONS), 16 * 8), (24, 24, 26, 255))
     for i, (iname, rows) in enumerate(ICONS.items()):
         icon = make_icon(rows)
@@ -1246,7 +1446,8 @@ def run_variant(variant, prefix):
         render(m, tex, glow, uv, mats, eye, scale=16, title=vname).save(os.path.join(PREVIEW, f"{prefix}_{vname}.png"))
     walk = {"armorRightArm": (-35, 0, 0), "armorLeftArm": (35, 0, 0), "armorRightLeg": (30, 0, 0),
             "armorRightBoot": (30, 0, 0), "armorLeftLeg": (-30, 0, 0), "armorLeftBoot": (-30, 0, 0)}
-    render(m, tex, glow, uv, bone_matrices(m, pose=walk), (-0.8, 0.35, -1), scale=16, title="walk pose")         .save(os.path.join(PREVIEW, f"{prefix}_walk.png"))
+    if kind == "armor":
+        render(m, tex, glow, uv, bone_matrices(m, pose=walk), (-0.8, 0.35, -1), scale=16, title="walk pose")         .save(os.path.join(PREVIEW, f"{prefix}_walk.png"))
     tex.resize((TEX * 3, TEX * 3), Image.NEAREST).save(os.path.join(PREVIEW, f"{prefix}_texture_x3.png"))
     if variant == "base":
         for slot, keep in (("helmet", "armorHead"), ("chestplate", ("armorBody", "armorRightArm", "armorLeftArm")),
@@ -1263,31 +1464,40 @@ def run_variant(variant, prefix):
                title="firing").save(os.path.join(PREVIEW, "cannon_firing.png"))
         render(m, tex, glow, uv, bone_matrices(m, anims["cannon_reload"]["fn"](1.0)), (-1, 0.2, -0.5), scale=16,
                title="reloading").save(os.path.join(PREVIEW, "cannon_reloading.png"))
-    if variant == "elytra":
+    if variant == "cannon_item":
+        for nm, a, t, eye in (("firing", "fire", 0.05, (-0.9, 0.3, -1)), ("reloading", "reload", 0.45, (-1, 0.3, 0.4)),
+                              ("open", "reload", 0.7, (-1, 0.5, 0.2))):
+            render(m, tex, glow, uv, bone_matrices(m, anims[a]["fn"](t)), eye, scale=20, title=nm)                 .save(os.path.join(PREVIEW, f"cannon_item_{nm}.png"))
+    if variant in ("elytra", "elytra_item"):
         spread = anims["elytra_glide"]["fn"](0.0)
         for vname, eye in (("spread_back", (0, 0.2, 1)), ("spread_back34", (0.8, 0.5, 1)), ("spread_top", (0.2, 1, 0.3))):
-            render(m, tex, glow, uv, bone_matrices(m, spread), eye, scale=12, title=vname)                 .save(os.path.join(PREVIEW, f"elytra_{vname}.png"))
+            render(m, tex, glow, uv, bone_matrices(m, spread), eye, scale=12, title=vname)                 .save(os.path.join(PREVIEW, f"{prefix}_{vname}.png"))
     if "--anim" in sys.argv:
-        skip = {"idle", "overdrive"} if variant != "base" else set()
+        skip = {"idle", "overdrive"} if variant not in ("base", "cannon_item") else set()
         for name, a in anims.items():
             if name in skip:
                 continue
             n = 8
             times = [a["length"] * i / n for i in range(n)] if a["loop"] is True else                 [a["length"] * i / (n - 1) for i in range(n)]
             eye = (0.8, 0.3, 1) if name.startswith("elytra") else (-0.8, 0.35, -1)
+            bounds = (np.array([-24, -2, 0]), np.array([24, 44, 0]))
+            if variant == "cannon_item":
+                eye, bounds = (-1, 0.35, -0.6), (np.array([-11, -3, 0]), np.array([11, 16, 0]))
             pose = None
             if name == "cannon_reload":
                 n = 8
                 times = [0.0, 0.3, 0.6, 0.9, 1.05, 1.2, 1.45, 1.9]
                 eye = (-1, 0.2, -0.5)
-            frames = [render(m, tex, glow, uv, bone_matrices(m, a["fn"](t), pose=pose), eye, scale=8,
-                             title=f"{name} t={t:.2f}", bounds=(np.array([-24, -2, 0]), np.array([24, 44, 0])))
+            frames = [render(m, tex, glow, uv, bone_matrices(m, a["fn"](t), pose=pose), eye,
+                             scale=16 if variant == "cannon_item" else 8,
+                             title=f"{name} t={t:.2f}", bounds=bounds)
                       for t in times]
             W, H = frames[0].size
             sh = Image.new("RGB", (W * 4, H * 2))
             for i, f in enumerate(frames):
                 sh.paste(f, ((i % 4) * W, (i // 4) * H))
-            sh.save(os.path.join(PREVIEW, f"anim_{name}.png"))
+            tag = "cannon_item_" if variant == "cannon_item" else ("elytra_item_" if variant == "elytra_item" else "")
+            sh.save(os.path.join(PREVIEW, f"anim_{tag}{name}.png"))
 
 if __name__ == "__main__":
     main()
