@@ -15,7 +15,8 @@ Context repo for AI assistants: a procedural generator plus its generated assets
     `elytra_glide`, `elytra_fold`, `elytra_charge`, `elytra_charged`.
   - **Kinetic charging port** (both `steam_elytra` and `steam_armor_elytra`): a Create-style shaft input at the bottom
     of the module's back face, for charging the elytra with rotational (kinetic) energy. Bones: `kinetic_port`
-    (mount point where the shaft connects, pivot `0, 14, 7.5`), `kinetic_shaft` (stub, spins about Z),
+    (mount point where the shaft connects, pivot `0, 14, 7.5`), `kinetic_shaft` (shaft, spins about Z), `kinetic_cog` (Create cogwheel on the shaft - this cog IS the port:
+    mesh another cog with it to feed rotation in),
     `charge_bar` (glowing bar above the implant socket, pivot at its left end - set scale X = charge 0..1 from code).
     `elytra_charge` = plugged in and charging (shaft spins, bar fills), `elytra_charged` = full bar pulsing.
 - `output/` — generated assets in GeckoLib `DefaultedItemGeoModel` layout (`geo/armor`, `animations/armor`,

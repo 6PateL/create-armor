@@ -224,7 +224,8 @@ def build_elytra(m, GEARS):
     wooden cogwheels at the hinges and windmill-sail canvas panels in brass frames.
     `implant_socket` is an empty mount bone in the middle of the module for implants (code side).
     Kinetic input (charging with Create rotational force): a brass-collared shaft port at the bottom of the module's
-    back face - `kinetic_port` (mount point where a shaft connects), `kinetic_shaft` (stub, spins about Z) - and a
+    back face - `kinetic_port` (mount point where a shaft connects), `kinetic_shaft` (stub, spins about Z) with
+    `kinetic_cog` on it (the cogwheel that acts as the port: mesh a cog with it) - and a
     glowing charge bar `charge_bar` above the implant socket (pivot at its left end: scale X = charge 0..1)."""
     B, E = "armorBody", "elytra_module"
     HX, HY, HZ = EL_HINGE
@@ -239,8 +240,10 @@ def build_elytra(m, GEARS):
     m.box(E, -1.0, 12.6, 6.6, 1.0, 12.9, 7.3, "andesite")                                  # collar foot
     m.bone("kinetic_port", E, (0, 14.0, 7.5))
     m.bone("kinetic_shaft", "kinetic_port", (0, 14.0, 7.5))
-    m.box("kinetic_shaft", -0.4, 13.6, 7.0, 0.4, 14.4, 8.6, "shaft")                       # shaft stub
+    m.box("kinetic_shaft", -0.4, 13.6, 7.0, 0.4, 14.4, 10.4, "shaft")                      # shaft (past the wings)
     m.box("kinetic_shaft", -0.55, 13.45, 8.1, 0.55, 14.55, 8.4, "brass")                   # coupling ring
+    # the port itself: a Create cogwheel on the shaft - another cog / shaft meshes with it to charge the elytra
+    gear(m, "kinetic_cog", "kinetic_shaft", (0, 14.0, 9.95), "z", 1.8, mat="cog_wood", hub="cog_hub")
     # charge meter: dark tube frame + glowing bar that code/anim scales from the bottom
     # (horizontal, above the implant socket, in the gap the folded wings leave open)
     m.box(E, -1.65, 20.95, 6.6, 1.65, 22.25, 6.85, "iron_dark")                            # meter frame
