@@ -6,6 +6,15 @@ Context repo for AI assistants: a procedural generator plus its generated assets
 - `tools/gen_armor.py` — single-file generator (Python 3, numpy, Pillow). Builds the `steam_armor` set and its
   `steam_armor_cannon` / `steam_armor_elytra` variants: geometry, UV-packed textures + glowmasks, animations,
   item models/icons. Run `python tools/gen_armor.py [--out <assets/modid dir>]`.
+- `steam_armor_extendo` (`--variant extendo`) — base armor + a back module with **two Create extendo grips** as
+  extra arms (the Extendo Grip item itself already exists in Create; this is only the armor model). Each arm sits on a
+  brass-casing bearing on the side of the backpack (mid-back); at rest the arms leave the back sideways and curve
+  up (Doc Ock style, segmented tentacle necks); on a strike the tentacle rises off the back, arcs over the shoulder
+  and the handle rolls its pistol grip outward so nothing clips the helmet or pauldrons. Bones (right; left = `extendo_l*`): `extendo_r` (hinge, swing), `extendo_r_neck0..3`
+  (curved vertebrae, straighten on a strike), `extendo_r_grip` > `extendo_r_cog`, scissor segments `extendo_r_seg0..2` with bars
+  `_seg{k}a/_seg{k}b`, `extendo_r_claw` > `_claw_top/_claw_bot`. Anims (own "extendo" controller): `extendo_idle`,
+  `extendo_strike` (loop: right then left - play while the player attacks / mines), `extendo_strike_right`,
+  `extendo_strike_left` (one strike each - alternate them per swing from code). Icon: `steam_extendo_module`.
 - Standalone models (same generator, `--variant cannon_item` / `--variant elytra_item`):
   - `steam_cannon` — the cannon taken off the arm as its own GeckoLib **item** (`geo/item`, `animations/item`,
     `textures/item/steam_cannon.png` + glowmask, `models/item/steam_cannon.json` = `builtin/entity` with display
@@ -19,6 +28,12 @@ Context repo for AI assistants: a procedural generator plus its generated assets
     mesh another cog with it to feed rotation in),
     `charge_bar` (glowing bar above the implant socket, pivot at its left end - set scale X = charge 0..1 from code).
     `elytra_charge` = plugged in and charging (shaft spins, bar fills), `elytra_charged` = full bar pulsing.
+- `steam_villager` — `tools/gen_villager.py` (reuses `gen_armor.py`): a villager clad in the same steampunk armor
+  (closed helmet with a full face mask, glowing goggle eyes and a respirator snout over the nose - no skin visible; brass breastplate, tassets, pauldrons/bracers and full gauntlets on the crossed arms, greaves +
+  boots, Create wrench on the hip) with a Create-style backpack (brass casing, two copper tanks, big + small
+  cogwheel, pressure gauge, two exhausts with steam). GeckoLib **entity**: `geo/entity`, `animations/entity`,
+  `textures/entity/steam_villager.png` + glowmask. Bones: `head`>`nose`, `body`>`backpack`, `arms`, `right_leg`,
+  `left_leg`. Anims: `idle`, `walk`, `work`, `head_shake`. Run `python tools/gen_villager.py [--anim]`.
 - `output/` — generated assets in GeckoLib `DefaultedItemGeoModel` layout (`geo/armor`, `animations/armor`,
   `textures/armor`, `textures/item`, `models/item`).
 - `tools/preview/` — renders of the model (front/side/back/3-4 views, texture sheets, animation frames) for visual checks.

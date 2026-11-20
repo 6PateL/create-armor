@@ -271,6 +271,94 @@ def build_elytra(m, GEARS):
     m.mirror(W, lambda s: s.replace("Right", "Left").replace("_r_", "_l_"))
 
 
+# ---------------------------------------------------------------------------- variant: twin extendo-grip arms
+EX_PIVOT = (-5.6, 21.0, 7.2)     # right arm hinge (left is mirrored): bearing on the side of the backpack, mid-back
+EX_REST = (-125.0, 0.0, 108.0)    # rest: arm leaves the back outward/back, slightly down; the neck curls it up (Doc Ock)
+EX_STRIKE_MOUNT = (-100.0, 0.0, 28.0)   # strike: hinge points up (splayed out), the neck then bends it forward
+EX_STRIKE_ROLL = -90.0            # roll of the handle about the arm axis while striking (keeps the grip off the shoulder)
+EX_STRIKE_BEND = (0.0, 0.0, 38.9, 61.1)  # per-link forward (X) bend while striking: straight up from the back, over
+                                         # the shoulder, forward (sums to -EX_STRIKE_MOUNT[0])
+EX_NECK, EX_NECK_LEN, EX_NECK_BEND = 4, 2.6, 18.0   # curved tentacle links: count, length, rest bend each (about Y)
+EX_SEGS, EX_BAR, EX_T0, EX_T1 = 3, 4.6, 66.0, 24.0   # scissor segments, bar length, bar angle folded / extended
+
+
+def build_extendo(m, GEARS):
+    """Two big Create extendo grips on curved, segmented tentacle necks (Doc Ock style), mounted on the back.
+    Each arm is built straight along -Z from its hinge; rest rotations bend it into shape:
+      extendo_r (hinge: swing over the shoulder)
+        > extendo_r_neck0 > neck1 > neck2 > neck3 (vertebrae, each bent EX_NECK_BEND about Y -> curl up/inward)
+          > extendo_r_grip (handle: brass body, pistol grip, extendo_r_cog)
+            > extendo_r_seg0 > extendo_r_seg0a / _seg0b (scissor bars, rotate about X) > seg1 > seg2
+              > extendo_r_claw > extendo_r_claw_top / _claw_bot
+    Extension = bars rotate from EX_T0 to EX_T1 off the arm axis while every following segment (and the claw)
+    slides along -Z by the gained segment length. Left arm: same names with extendo_l."""
+    B = "armorBody"
+    PX, PY, PZ = EX_PIVOT
+    M = "extendo_r"
+    for sx in (-1, 1):                                                                       # body-side mounts
+        x0, x1 = sorted((sx * 3.4, sx * (-PX - 0.4)))
+        m.box(B, x0, PY - 0.8, 4.8, x1, PY + 0.8, PZ - 1.4, "andesite")                     # bracket off the frame
+        x0, x1 = sorted((sx * 3.4, sx * 3.15))
+        m.box(B, x0, PY - 2.2, 4.8, x1, PY + 2.2, PZ + 1.0, "andesite")                     # side plate
+        x0, x1 = sorted((sx * (-PX - 1.4), sx * (-PX + 1.4)))
+        m.box(B, x0, PY - 1.4, PZ - 1.4, x1, PY + 1.4, PZ + 1.4, "brass_casing")             # hinge bearing
+    m.bone(M, B, EX_PIVOT, EX_REST)
+    m.box(M, PX - 1.6, PY - 1.6, PZ - 1.6, PX + 1.6, PY + 1.6, PZ + 1.6, "iron_dark")        # ball joint
+    m.box(M, PX - 1.8, PY - 0.6, PZ - 0.6, PX + 1.8, PY + 0.6, PZ + 0.6, "shaft")            # hinge axle
+    # tentacle neck: andesite vertebra + brass ring per link, dark gap between links
+    z, parent = PZ - 1.6, M
+    for k in range(EX_NECK):
+        N = f"extendo_r_neck{k}"
+        m.bone(N, parent, (PX, PY, z), (0, EX_NECK_BEND, 0))
+        r = 1.45 - 0.05 * k
+        m.box(N, PX - r, PY - r, z - EX_NECK_LEN + 0.3, PX + r, PY + r, z, "andesite")
+        m.box(N, PX - r - 0.3, PY - r - 0.3, z - 1.5, PX + r + 0.3, PY + r + 0.3, z - 0.7, "brass")
+        m.box(N, PX - 0.9, PY - 0.9, z - EX_NECK_LEN, PX + 0.9, PY + 0.9, z - EX_NECK_LEN + 0.3, "iron_dark")
+        z, parent = z - EX_NECK_LEN, N
+    # handle: big brass body, rear cap, copper band, wooden pistol grip + trigger, andesite collar, side cog
+    G = "extendo_r_grip"
+    m.bone(G, parent, (PX, PY, z))
+    m.box(G, PX - 1.8, PY - 1.9, z - 4.6, PX + 1.8, PY + 1.9, z - 0.4, "brass_plate")
+    m.box(G, PX - 1.3, PY - 1.3, z - 0.4, PX + 1.3, PY + 1.3, z, "iron_dark")
+    m.box(G, PX - 2.0, PY - 2.1, z - 2.7, PX + 2.0, PY + 2.1, z - 1.9, "copper")
+    m.box(G, PX - 0.9, PY - 5.0, z - 2.0, PX + 0.9, PY - 1.9, z - 0.6, "cog_wood")
+    m.box(G, PX - 0.3, PY - 3.0, z - 2.8, PX + 0.3, PY - 1.9, z - 2.0, "brass")
+    m.box(G, PX - 2.1, PY - 2.2, z - 5.3, PX + 2.1, PY + 2.2, z - 4.6, "andesite")
+    GEARS.append((gear(m, "extendo_r_cog", G, (PX - 2.25, PY + 0.2, z - 3.6), "x", 1.9, mat="cog_wood",
+                       hub="cog_hub"), "x", 45))
+    # scissor linkage (lazy tongs): wide brass + wooden bars crossing on an andesite pin
+    z0, L = z - 5.3, EX_BAR
+    s0 = L * math.cos(math.radians(EX_T0))
+    parent = G
+    for k in range(EX_SEGS):
+        S = f"extendo_r_seg{k}"
+        m.bone(S, parent, (PX, PY, z0 - k * s0))
+        zc = z0 - (k + 0.5) * s0
+        m.box(S, PX - 1.6, PY - 0.45, zc - 0.45, PX + 1.6, PY + 0.45, zc + 0.45, "andesite")    # pin
+        m.bone(S + "a", S, (PX, PY, zc), (EX_T0, 0, 0))
+        m.box(S + "a", PX - 1.35, PY - 0.7, zc - L / 2, PX - 0.25, PY + 0.7, zc + L / 2, "brass")
+        m.bone(S + "b", S, (PX, PY, zc), (-EX_T0, 0, 0))
+        m.box(S + "b", PX + 0.25, PY - 0.7, zc - L / 2, PX + 1.35, PY + 0.7, zc + L / 2, "cog_wood")
+        parent = S
+    # claw: andesite plate + two wide brass fingers with hooked tips
+    zE = z0 - EX_SEGS * s0
+    C = "extendo_r_claw"
+    m.bone(C, parent, (PX, PY, zE))
+    m.box(C, PX - 2.1, PY - 2.4, zE - 0.9, PX + 2.1, PY + 2.4, zE, "andesite")
+    m.box(C, PX - 1.3, PY - 0.8, zE - 1.5, PX + 1.3, PY + 0.8, zE - 0.9, "iron_dark")
+    for tag, sy in (("top", 1), ("bot", -1)):
+        F = f"{C}_{tag}"
+        m.bone(F, C, (PX, PY + sy * 1.6, zE - 0.9))
+        y0, y1 = sorted((PY + sy * 1.0, PY + sy * 2.2))
+        m.box(F, PX - 1.7, y0, zE - 4.8, PX + 1.7, y1, zE - 0.9, "brass")
+        y0, y1 = sorted((PY + sy * 0.15, PY + sy * 1.0))
+        m.box(F, PX - 1.7, y0, zE - 4.8, PX + 1.7, y1, zE - 3.8, "brass")
+        y0, y1 = sorted((PY + sy * 2.2, PY + sy * 2.5))
+        m.box(F, PX - 1.2, y0, zE - 3.4, PX + 1.2, y1, zE - 1.4, "copper")               # finger plate
+    m.mirror(M, lambda s: s.replace("extendo_r", "extendo_l"))
+    GEARS.append(("extendo_l_cog", "x", -45))
+
+
 # ---------------------------------------------------------------------------- standalone models
 FACE_ROT_X90 = {"north": "up", "up": "south", "south": "down", "down": "north", "east": "east", "west": "west"}
 
@@ -532,6 +620,8 @@ def build(variant="base"):
         build_cannon(m, GEARS)
     elif variant == "elytra":
         build_elytra(m, GEARS)
+    elif variant == "extendo":
+        build_extendo(m, GEARS)
 
     m.variant = variant
     m.gears, m.steam = GEARS, STEAM
@@ -908,7 +998,9 @@ def export_geo(model, uv, path):
         bones.append(bj)
     geo = {"format_version": "1.12.0", "minecraft:geometry": [{
         "description": {"identifier": f"geometry.{NAME}", "texture_width": TEX, "texture_height": TEX,
-                        "visible_bounds_width": 3, "visible_bounds_height": 3.5, "visible_bounds_offset": [0, 1.25, 0]},
+                        **({"visible_bounds_width": 3, "visible_bounds_height": 4.5, "visible_bounds_offset": [0, 1.75, 0]}
+                           if NAME.endswith("extendo") else
+                           {"visible_bounds_width": 3, "visible_bounds_height": 3.5, "visible_bounds_offset": [0, 1.25, 0]})},
         "bones": bones}]}
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(geo, fh, indent="\t")
@@ -1187,6 +1279,74 @@ def make_animations(m):
 
         anims["elytra_charge"] = dict(fn=charge, length=3.0, dt=0.05, loop=True)
         anims["elytra_charged"] = dict(fn=charged, length=2.0, dt=0.1, loop=True)
+
+    if m.variant == "extendo":
+        # extendo_* anims go on their own "extendo" controller (they only touch extendo bones), body idle keeps
+        # running. Play extendo_strike while the player keeps swinging (attack / mining), or alternate
+        # extendo_strike_right / extendo_strike_left once per swing from code.
+        s0 = EX_BAR * math.cos(math.radians(EX_T0))
+
+        def ex_arm(out, tag, swing, ext, claw, cog):
+            sgn = 1 if tag == "r" else -1
+            add(out, f"extendo_{tag}", ((EX_STRIKE_MOUNT[0] - EX_REST[0]) * swing, 0,
+                                        sgn * (EX_STRIKE_MOUNT[2] - EX_REST[2]) * swing))
+            for k in range(EX_NECK):           # tentacle: sideways curl off, forward curl over the shoulder on
+                add(out, f"extendo_{tag}_neck{k}", (EX_STRIKE_BEND[k] * swing, -sgn * EX_NECK_BEND * swing, 0))
+            add(out, f"extendo_{tag}_grip", (0, 0, sgn * EX_STRIKE_ROLL * swing))   # pistol grip rolls outward
+            th = EX_T0 + (EX_T1 - EX_T0) * ext
+            dz = -(EX_BAR * math.cos(math.radians(th)) - s0)
+            for k in range(EX_SEGS):
+                add(out, f"extendo_{tag}_seg{k}a", (th - EX_T0, 0, 0))
+                add(out, f"extendo_{tag}_seg{k}b", (-(th - EX_T0), 0, 0))
+                if k:
+                    add(out, f"extendo_{tag}_seg{k}", pos=(0, 0, dz))
+            add(out, f"extendo_{tag}_claw", pos=(0, 0, dz))
+            add(out, f"extendo_{tag}_claw_top", (-35 * claw, 0, 0))
+            add(out, f"extendo_{tag}_claw_bot", (35 * claw, 0, 0))
+            add(out, f"extendo_{tag}_cog", (sgn * cog, 0, 0))
+
+        def ex_profile(u):
+            """One strike, u 0..1: swing over the shoulder, shoot the scissors out with the claw open, snap the
+            claw shut on impact, pull back and fold. Everything is 0 at u=0 and u=1."""
+            if u <= 0 or u >= 1:
+                return 0.0, 0.0, 0.0, 0.0
+            swing = smooth(u / 0.3) if u < 0.5 else 1 - smooth((u - 0.5) / 0.45)
+            swing += 0.06 * math.sin(math.pi * max(0.0, min(1.0, (u - 0.34) / 0.16)))    # impact jolt
+            ext = smooth((u - 0.12) / 0.23) if u < 0.55 else 1 - smooth((u - 0.55) / 0.35)
+            claw = smooth(u / 0.25) if u < 0.36 else max(0.0, 1 - (u - 0.36) / 0.06)
+            return swing, ext, claw, 540 * u
+
+        EX_T = 0.4                                                     # one arm's strike
+
+        def strike_one(tag):
+            def fn(t):
+                out = {}
+                ex_arm(out, tag, *ex_profile(t / EX_T))
+                return out
+            return fn
+
+        def strike(t):                                                 # loop: right, then left
+            out = {}
+            ex_arm(out, "r", *ex_profile(t / EX_T))
+            ex_arm(out, "l", *ex_profile((t - EX_T) / EX_T))
+            return out
+
+        def ex_idle(t):                                                # folded arms sway a little, claws twitch
+            out = {}
+            for tag, ph in (("r", 0.0), ("l", 1.3)):
+                sgn = 1 if tag == "r" else -1
+                add(out, f"extendo_{tag}", (2.5 * math.sin(TAU * t / 4.0 + ph), 0, 0))
+                for k in range(EX_NECK):                               # slow tentacle curl
+                    add(out, f"extendo_{tag}_neck{k}", (0, sgn * 2.0 * math.sin(TAU * t / 4.0 + ph - 0.5 * k), 0))
+                c = 0.15 * max(0.0, math.sin(TAU * t / 2.0 + ph)) ** 8
+                add(out, f"extendo_{tag}_claw_top", (-35 * c, 0, 0))
+                add(out, f"extendo_{tag}_claw_bot", (35 * c, 0, 0))
+            return out
+
+        anims["extendo_idle"] = dict(fn=ex_idle, length=4.0, dt=0.1, loop=True)
+        anims["extendo_strike"] = dict(fn=strike, length=2 * EX_T, dt=0.02, loop=True)
+        anims["extendo_strike_right"] = dict(fn=strike_one("r"), length=EX_T, dt=0.02, loop=False)
+        anims["extendo_strike_left"] = dict(fn=strike_one("l"), length=EX_T, dt=0.02, loop=False)
     return anims
 
 
@@ -1339,6 +1499,24 @@ ICONS = {
         "................",
     ],
 }
+ICONS["steam_extendo_module"] = [
+    "................",
+    ".kk..........kk.",
+    "kBBk........kBBk",
+    "kbak........kabk",
+    ".kBk........kBk.",
+    ".klBk......kBlk.",
+    "..kBlk....klBk..",
+    "...klBk..kBlk...",
+    "...kBlk..klBk...",
+    "..klBk....kBlk..",
+    "..kBlk....klBk..",
+    ".kbbbk.kk.kbbbk.",
+    ".kBBBkkaakkBBBk.",
+    ".kdddkkaakkdddk.",
+    "..kkk..kk..kkk..",
+    "................",
+]
 ICONS["steam_elytra"] = ICONS["steam_elytra_module"]   # standalone wearable elytra uses the same icon
 ICON_PAL.update({"y": (214, 168, 40), "a": (150, 152, 146), "x": (40, 34, 30)})
 
@@ -1427,6 +1605,7 @@ def render(model, tex, glow, uv, mats, eye, scale=24, title=None, bounds=None, h
 # ============================================================================ main
 VARIANTS = [("steam_armor", "base", "armor"), ("steam_armor_cannon", "cannon", "cannon"),
             ("steam_armor_elytra", "elytra", "elytra"),
+            ("steam_armor_extendo", "extendo", "extendo"),       # twin extendo-grip arms on the back
             ("steam_cannon", "cannon_item", "cannon_item"),     # standalone cannon, GeckoLib item (geo/item)
             ("steam_elytra", "elytra_item", "elytra_item")]     # standalone wearable elytra (geo/armor)
 ITEM_VARIANTS = {"cannon_item"}
@@ -1523,6 +1702,11 @@ def run_variant(variant, prefix):
         for nm, a, t, eye in (("firing", "fire", 0.05, (-0.9, 0.3, -1)), ("reloading", "reload", 0.45, (-1, 0.3, 0.4)),
                               ("open", "reload", 0.7, (-1, 0.5, 0.2))):
             render(m, tex, glow, uv, bone_matrices(m, anims[a]["fn"](t)), eye, scale=20, title=nm)                 .save(os.path.join(PREVIEW, f"cannon_item_{nm}.png"))
+    if variant == "extendo":
+        for nm, a, t, eye in (("strike_right", "extendo_strike_right", 0.16, (-0.9, 0.3, -1)),
+                              ("strike_right_side", "extendo_strike_right", 0.16, (-1, 0.15, 0)),
+                              ("strike_left", "extendo_strike_left", 0.16, (0.9, 0.3, -1))):
+            render(m, tex, glow, uv, bone_matrices(m, anims[a]["fn"](t)), eye, scale=12, title=nm)                 .save(os.path.join(PREVIEW, f"extendo_{nm}.png"))
     if variant in ("elytra", "elytra_item"):
         spread = anims["elytra_glide"]["fn"](0.0)
         for vname, eye in (("spread_back", (0, 0.2, 1)), ("spread_back34", (0.8, 0.5, 1)), ("spread_top", (0.2, 1, 0.3))):
@@ -1536,6 +1720,8 @@ def run_variant(variant, prefix):
             times = [a["length"] * i / n for i in range(n)] if a["loop"] is True else                 [a["length"] * i / (n - 1) for i in range(n)]
             eye = (0.8, 0.3, 1) if name.startswith("elytra") else (-0.8, 0.35, -1)
             bounds = (np.array([-24, -2, 0]), np.array([24, 44, 0]))
+            if name.startswith("extendo"):
+                eye, bounds = (-1, 0.3, -0.35), (np.array([-26, -2, 0]), np.array([26, 56, 0]))
             if variant == "cannon_item":
                 eye, bounds = (-1, 0.35, -0.6), (np.array([-11, -3, 0]), np.array([11, 16, 0]))
             pose = None
