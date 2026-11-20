@@ -1,18 +1,14 @@
 package com.createarmor;
 
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -21,25 +17,27 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
-/** Крила на зарядці: читає швидкість обертання кінетичного блока Create над собою (або поруч) і набирає пару. */
-public class SteamWingsBlockEntity extends BlockEntity implements GeoBlockEntity {
-    private static final Map<Class<?>, Method> SPEED = new HashMap<>();
+/** Крила на зарядці: кінетичний блок Create, що бере стрес; чим швидше обертання, тим швидше набирається пара. */
+public class SteamWingsBlockEntity extends KineticBlockEntity implements GeoBlockEntity {
+    /** Стрес (одиниць на 1 об/хв), який беруть крила під час зарядки. */
+    public static final double STRESS = 4.0;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private ItemStack stack = ItemStack.EMPTY;
-    /** 0 — стоїть, 1 — заряджається, 2 — повна. Синхронізується з клієнтом для анімації. */
+    /** 0 — стоїть, 1 — заряджається, 2 — повна. */
     private int mode;
 
+    public SteamWingsBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
     public SteamWingsBlockEntity(BlockPos pos, BlockState state) {
-        super(CreateArmor.WINGS_BE.get(), pos, state);
+        this(CreateArmor.WINGS_BE.get(), pos, state);
     }
 
     public void put(ItemStack s) {
         stack = s.copyWithCount(1);
-        sync();
+        refreshStress();
+        notifyUpdate();
     }
 
     public ItemStack take() {
@@ -52,93 +50,70 @@ public class SteamWingsBlockEntity extends BlockEntity implements GeoBlockEntity
         return Steam.get(stack);
     }
 
-    public int mode() {
-        return mode;
-    }
-
-    static void serverTick(Level level, BlockPos pos, BlockState state, SteamWingsBlockEntity be) {
-        if (be.stack.isEmpty()) {
+    @Override
+    public void tick() {
+        super.tick();
+        if (level == null || level.isClientSide || stack.isEmpty()) {
             return;
         }
-        float speed = 0;
-        for (Direction d : new Direction[]{Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN}) {
-            speed = Math.max(speed, Math.abs(speedOf(level.getBlockEntity(pos.relative(d)))));
-        }
-        int have = Steam.get(be.stack);
+        float speed = Math.abs(getSpeed());
+        int have = Steam.get(stack);
         int newMode;
         if (have >= Steam.MAX) {
             newMode = 2;
-        } else if (speed > 0) {
+        } else if (speed > 0 && !isOverStressed()) {
             newMode = 1;
-            int add = Math.max(1, Math.round(speed / 16F));
-            Steam.set(be.stack, have + add);
-            be.setChanged();
+            Steam.set(stack, have + Math.max(1, Math.round(speed / 16F)));
+            setChanged();
             if (level.getGameTime() % 10 == 0 && level instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.9, pos.getZ() + 0.5, 2, 0.15, 0.05, 0.15, 0.01);
+                sl.sendParticles(ParticleTypes.CLOUD, worldPosition.getX() + 0.5, worldPosition.getY() + 0.9, worldPosition.getZ() + 0.5,
+                        2, 0.15, 0.05, 0.15, 0.01);
             }
-            if (Steam.get(be.stack) >= Steam.MAX) {
-                level.playSound(null, pos, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.BLOCKS, 0.6F, 1.6F);
+            if (Steam.get(stack) >= Steam.MAX) {
+                level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.BLOCKS, 0.6F, 1.6F);
             }
         } else {
             newMode = 0;
         }
-        if (newMode != be.mode || newMode == 1 && level.getGameTime() % 20 == 0) {
-            be.mode = newMode;
-            be.sync();
-        }
-    }
-
-    private static float speedOf(BlockEntity be) {
-        if (be == null) {
-            return 0;
-        }
-        try {
-            Method m = SPEED.computeIfAbsent(be.getClass(), c -> {
-                try {
-                    return c.getMethod("getSpeed");
-                } catch (NoSuchMethodException e) {
-                    return null;
-                }
-            });
-            if (m == null) {
-                return 0;
+        if (newMode != mode || newMode == 1 && level.getGameTime() % 20 == 0) {
+            if ((newMode == 2) != (mode == 2)) {
+                refreshStress();
             }
-            Object v = m.invoke(be);
-            return v instanceof Float f ? f : 0;
-        } catch (ReflectiveOperationException e) {
-            return 0;
+            mode = newMode;
+            sendData();
         }
     }
 
-    private void sync() {
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    private boolean wantsSteam() {
+        return !stack.isEmpty() && Steam.get(stack) < Steam.MAX;
+    }
+
+    /** Стрес беруть лише крила, яким ще треба пара; повні або порожній блок мережу не навантажують. */
+    @Override
+    public float calculateStressApplied() {
+        float impact = wantsSteam() ? (float) STRESS : 0F;
+        lastStressApplied = impact;
+        return impact;
+    }
+
+    private void refreshStress() {
+        if (hasNetwork()) {
+            getOrCreateNetwork().updateStressFor(this, calculateStressApplied());
         }
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void write(CompoundTag tag, boolean clientPacket) {
+        super.write(tag, clientPacket);
         tag.put("Wings", stack.save(new CompoundTag()));
         tag.putInt("Mode", mode);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void read(CompoundTag tag, boolean clientPacket) {
+        super.read(tag, clientPacket);
         stack = ItemStack.of(tag.getCompound("Wings"));
         mode = tag.getInt("Mode");
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

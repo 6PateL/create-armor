@@ -40,5 +40,10 @@ public class WingsRenderer extends GeoBlockRenderer<SteamWingsBlockEntity> {
         }
         float fill = be.energy() / (float) Steam.MAX;
         model.getBone("charge_bar").ifPresent(bone -> bone.setScaleX(Math.max(0.02F, fill)));
+        // вал і шестерня порту крутяться разом із мережею Create
+        float angle = com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer.getAngleForBe(be, be.getBlockPos(),
+                be.getBlockState().getValue(SteamWingsBlock.HORIZONTAL_FACING).getAxis());
+        model.getBone("kinetic_shaft").ifPresent(bone -> bone.setRotZ(angle));
+        model.getBone("kinetic_cog").ifPresent(bone -> bone.setRotZ(angle));
     }
 }

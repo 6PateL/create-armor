@@ -55,7 +55,7 @@ public class CreateArmor {
             () -> new SteamWingsBlock(BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.COPPER).noOcclusion()));
     @SuppressWarnings("DataFlowIssue")
     public static final RegistryObject<BlockEntityType<SteamWingsBlockEntity>> WINGS_BE = BLOCK_ENTITIES.register("steam_wings",
-            () -> BlockEntityType.Builder.of(SteamWingsBlockEntity::new, WINGS_BLOCK.get()).build(null));
+            () -> BlockEntityType.Builder.<SteamWingsBlockEntity>of(SteamWingsBlockEntity::new, WINGS_BLOCK.get()).build(null));
 
     public static final RegistryObject<MenuType<ImplantMenu>> IMPLANT_MENU = MENUS.register("implant",
             () -> IForgeMenuType.create((id, inv, buf) -> new ImplantMenu(id, inv)));
@@ -76,7 +76,10 @@ public class CreateArmor {
         ITEMS.register(bus);
         BLOCKS.register(bus);
         BLOCK_ENTITIES.register(bus);
-        bus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(LiveImplant::registerBacktankSupplier));
+        bus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
+            LiveImplant.registerBacktankSupplier();
+            com.simibubi.create.api.stress.BlockStressValues.IMPACTS.register(WINGS_BLOCK.get(), () -> SteamWingsBlockEntity.STRESS);
+        }));
         MENUS.register(bus);
         TABS.register(bus);
         Net.register();

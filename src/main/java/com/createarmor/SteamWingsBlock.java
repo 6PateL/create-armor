@@ -1,5 +1,7 @@
 package com.createarmor;
 
+import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
+import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -9,44 +11,45 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.level.storage.loot.LootParams;
 
 import java.util.List;
 
 /**
- * Поставлені парові крила (як бектанк Create / риг Octo Arms): вал, що крутиться над ними або поруч, заряджає пару.
+ * Поставлені парові крила — кінетичний блок Create (як бектанк / риг Octo Arms). Вал або шестерня під'єднуються до
+ * кінетичного порту на спині модуля (бік, куди дивиться FACING), блок бере стрес і заряджає пару.
  * Зламати блок або ПКМ порожньою рукою — забрати крила з усією парою.
  */
-public class SteamWingsBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    private static final VoxelShape SHAPE = Block.box(2, 0, 3, 14, 13, 13);
+public class SteamWingsBlock extends HorizontalKineticBlock implements IBE<SteamWingsBlockEntity> {
+    private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 14, 15);
 
     public SteamWingsBlock(Properties p) {
         super(p);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) {
-        b.add(FACING);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        return defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
+        Direction pref = getPreferredHorizontalFacing(ctx);
+        Direction f = pref != null ? pref : ctx.getHorizontalDirection();
+        return defaultBlockState().setValue(HORIZONTAL_FACING, f);
+    }
+
+    @Override
+    public Direction.Axis getRotationAxis(BlockState state) {
+        return state.getValue(HORIZONTAL_FACING).getAxis();
+    }
+
+    @Override
+    public boolean hasShaftTowards(LevelReader level, BlockPos pos, BlockState state, Direction face) {
+        return face == state.getValue(HORIZONTAL_FACING);
     }
 
     @Override
@@ -60,13 +63,13 @@ public class SteamWingsBlock extends BaseEntityBlock {
     }
 
     @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new SteamWingsBlockEntity(pos, state);
+    public Class<SteamWingsBlockEntity> getBlockEntityClass() {
+        return SteamWingsBlockEntity.class;
     }
 
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, CreateArmor.WINGS_BE.get(), level.isClientSide ? null : SteamWingsBlockEntity::serverTick);
+    public BlockEntityType<? extends SteamWingsBlockEntity> getBlockEntityType() {
+        return CreateArmor.WINGS_BE.get();
     }
 
     @Override
