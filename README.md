@@ -1,0 +1,13 @@
+# Create Armor — steampunk GeckoLib armor (Forge 1.20.1, GeckoLib 4)
+
+Context repo for AI assistants: a procedural generator plus its generated assets and preview renders.
+
+- `armor.jpg` — reference concept art.
+- `tools/gen_armor.py` — single-file generator (Python 3, numpy, Pillow). Builds the `steam_armor` set and its
+  `steam_armor_cannon` / `steam_armor_elytra` variants: geometry, UV-packed textures + glowmasks, animations,
+  item models/icons. Run `python tools/gen_armor.py [--out <assets/modid dir>]`.
+- `output/` — generated assets in GeckoLib `DefaultedItemGeoModel` layout (`geo/armor`, `animations/armor`,
+  `textures/armor`, `textures/item`, `models/item`).
+- `tools/preview/` — renders of the model (front/side/back/3-4 views, texture sheets, animation frames) for visual checks.
+
+Bones follow GeckoLib's armor template (armorHead, armorBody, armorRightArm, …). 1 block = 16 px, model faces -Z.
