@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "createarmor:item/incomplete_steam_plate"
+  }
+}

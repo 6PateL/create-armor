@@ -1,0 +1,28 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "PP   PP",
+    "PPBMBPP",
+    " PPFPP ",
+    "  PPP  "
+  ],
+  "key": {
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "B": {
+      "item": "create:brass_casing"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "F": {
+      "item": "create:fluid_tank"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_chestplate",
+    "count": 1
+  }
+}

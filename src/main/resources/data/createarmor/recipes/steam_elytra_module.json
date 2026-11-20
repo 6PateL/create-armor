@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BMB",
+    "PEP",
+    "BMB"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "E": {
+      "item": "createarmor:steam_elytra"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_elytra_module"
+  }
+}

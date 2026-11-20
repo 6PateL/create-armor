@@ -1,0 +1,34 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "S  BFB  S",
+    "SS MPM SS",
+    "SSR   RSS",
+    "S       S"
+  ],
+  "key": {
+    "S": {
+      "item": "create:brass_sheet"
+    },
+    "B": {
+      "item": "create:brass_casing"
+    },
+    "F": {
+      "item": "create:fluid_tank"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "R": {
+      "item": "create:propeller"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_elytra",
+    "count": 1
+  }
+}

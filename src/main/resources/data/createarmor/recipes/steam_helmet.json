@@ -1,0 +1,24 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "PPPPP",
+    "PTMTP",
+    "P   P"
+  ],
+  "key": {
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "T": {
+      "item": "create:electron_tube"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_helmet",
+    "count": 1
+  }
+}

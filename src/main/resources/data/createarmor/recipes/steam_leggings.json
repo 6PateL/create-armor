@@ -1,0 +1,22 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "PPMPP",
+    "PP PP",
+    "P   P",
+    "P   P"
+  ],
+  "key": {
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_leggings",
+    "count": 1
+  }
+}

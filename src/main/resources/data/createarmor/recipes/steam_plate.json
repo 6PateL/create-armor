@@ -1,0 +1,85 @@
+{
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "create:sturdy_sheet"
+  },
+  "transitionalItem": {
+    "item": "createarmor:incomplete_steam_plate"
+  },
+  "loops": 2,
+  "results": [
+    {
+      "item": "createarmor:steam_plate",
+      "chance": 100.0
+    },
+    {
+      "item": "create:sturdy_sheet",
+      "chance": 5.0
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        },
+        {
+          "item": "create:brass_sheet"
+        }
+      ],
+      "results": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        },
+        {
+          "item": "minecraft:diamond"
+        }
+      ],
+      "results": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:filling",
+      "ingredients": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        },
+        {
+          "fluid": "minecraft:water",
+          "nbt": {},
+          "amount": 250
+        }
+      ],
+      "results": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        }
+      ],
+      "results": [
+        {
+          "item": "createarmor:incomplete_steam_plate"
+        }
+      ]
+    }
+  ]
+}

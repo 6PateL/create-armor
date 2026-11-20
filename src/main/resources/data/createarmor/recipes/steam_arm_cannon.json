@@ -1,0 +1,39 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "PPPPS",
+    "QRMRB",
+    "PPPPS"
+  ],
+  "key": {
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "S": {
+      "item": "createbigcannons:steel_ingot"
+    },
+    "Q": {
+      "item": "createbigcannons:quickfiring_mechanism"
+    },
+    "R": {
+      "item": "createbigcannons:recoil_spring"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "B": {
+      "item": "create:brass_casing"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_arm_cannon",
+    "count": 1
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "createbigcannons"
+    }
+  ]
+}

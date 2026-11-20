@@ -39,3 +39,13 @@ Context repo for AI assistants: a procedural generator plus its generated assets
 - `tools/preview/` — renders of the model (front/side/back/3-4 views, texture sheets, animation frames) for visual checks.
 
 Bones follow GeckoLib's armor template (armorHead, armorBody, armorRightArm, …). 1 block = 16 px, model faces -Z.
+
+## Мод (Forge 1.20.1) — `src/`
+
+- Паровий сет (шолом/нагрудник/поножі/чоботи), GeckoLib-рендер; модель змінюється за імплантом (`steam_armor_cannon/elytra/extendo`).
+- Повний сет: +4 шкоди (для будь-якої істоти, зокрема рекрутів) і слот імпланта (клавіша **K**).
+- Імпланти: будь-який нагрудник (передає броню/міцність, малюється поверх), Extendo Grip / модуль (+3 досяжності),
+  парові крила або модуль (політ + паровий поштовх: тримай і відпусти пробіл у польоті), наручна гармата (поки лише модель).
+- Парові крила носяться й окремо в слоті нагрудника. Пара заряджається Shift+ПКМ по бектанку Create, що крутиться від вала.
+- Крафт: `steam_plate` — sequenced assembly (sturdy sheet → brass sheet → алмаз → 250 mB води → прес, 2 цикли);
+  броня/крила/модулі — mechanical crafting. Гармати потребують Create Big Cannons.

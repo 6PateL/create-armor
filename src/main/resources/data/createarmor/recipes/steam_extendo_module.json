@@ -1,0 +1,30 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "X B X",
+    "XPMPX",
+    " PTP "
+  ],
+  "key": {
+    "X": {
+      "item": "create:extendo_grip"
+    },
+    "B": {
+      "item": "create:brass_casing"
+    },
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "T": {
+      "item": "create:electron_tube"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_extendo_module",
+    "count": 1
+  }
+}

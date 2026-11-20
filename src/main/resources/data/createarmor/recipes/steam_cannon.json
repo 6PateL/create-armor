@@ -1,0 +1,45 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "SSSSSPB",
+    "QRRMTFP",
+    "SSSSSP "
+  ],
+  "key": {
+    "S": {
+      "item": "createbigcannons:steel_ingot"
+    },
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "B": {
+      "item": "create:brass_casing"
+    },
+    "Q": {
+      "item": "createbigcannons:quickfiring_mechanism"
+    },
+    "R": {
+      "item": "createbigcannons:recoil_spring"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "T": {
+      "item": "create:electron_tube"
+    },
+    "F": {
+      "item": "create:fluid_tank"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_cannon",
+    "count": 1
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "createbigcannons"
+    }
+  ]
+}

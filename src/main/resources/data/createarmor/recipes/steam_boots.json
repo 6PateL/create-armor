@@ -1,0 +1,21 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": true,
+  "pattern": [
+    "P   P",
+    "PM MP",
+    "P   P"
+  ],
+  "key": {
+    "P": {
+      "item": "createarmor:steam_plate"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_boots",
+    "count": 1
+  }
+}
