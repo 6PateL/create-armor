@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.createarmor.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "TentaworksCommonMixin"
+  ],
+  "client": [
+    "TentaworksClientMixin",
+    "ArmPoseMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

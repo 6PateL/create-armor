@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "createarmor:block/steam_wings"
+    },
+    "facing=south": {
+      "model": "createarmor:block/steam_wings"
+    },
+    "facing=east": {
+      "model": "createarmor:block/steam_wings"
+    },
+    "facing=west": {
+      "model": "createarmor:block/steam_wings"
+    }
+  }
+}

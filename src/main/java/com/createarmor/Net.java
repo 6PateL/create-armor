@@ -29,6 +29,8 @@ public final class Net {
     public static void register() {
         CHANNEL.registerMessage(0, OpenImplant.class, (m, b) -> { }, b -> new OpenImplant(), OpenImplant::handle);
         CHANNEL.registerMessage(1, Boost.class, Boost::encode, Boost::decode, Boost::handle);
+        CHANNEL.registerMessage(2, CannonAction.class, CannonAction::encode, CannonAction::decode, CannonAction::handle);
+        CHANNEL.registerMessage(3, CannonFx.class, CannonFx::encode, CannonFx::decode, CannonFx::handle);
     }
 
     /** Клавіша імпланта: відкрити слот (лише в повному сеті). */
@@ -88,6 +90,65 @@ public final class Net {
                     Vec3 back = p.position().add(0, 1, 0).subtract(look.scale(0.8));
                     sl.sendParticles(ParticleTypes.CLOUD, back.x, back.y, back.z, (int) (10 + 20 * charge), 0.25, 0.25, 0.25, 0.05);
                     sl.sendParticles(ParticleTypes.LARGE_SMOKE, back.x, back.y, back.z, 6, 0.2, 0.2, 0.2, 0.02);
+                }
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Гармата: 0 — перезарядка, 1 — постріл (наручна), 2 — вибір снаряда. */
+    public record CannonAction(byte action, byte target, String ammo) {
+        static void encode(CannonAction m, FriendlyByteBuf b) {
+            b.writeByte(m.action);
+            b.writeByte(m.target);
+            b.writeUtf(m.ammo, 256);
+        }
+
+        static CannonAction decode(FriendlyByteBuf b) {
+            return new CannonAction(b.readByte(), b.readByte(), b.readUtf(256));
+        }
+
+        static void handle(CannonAction m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer p = ctx.get().getSender();
+                if (p == null || m.target < 0 || m.target > 1) {
+                    return;
+                }
+                Cannon.Target t = Cannon.Target.values()[m.target];
+                switch (m.action) {
+                    case 0 -> Cannon.reload(p, t);
+                    case 1 -> {
+                        if (t == Cannon.Target.ARM && p.getMainHandItem().isEmpty()) {
+                            Cannon.fire(p, t);
+                        }
+                    }
+                    case 2 -> Cannon.select(p, t, m.ammo);
+                    default -> {
+                    }
+                }
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Ефект для клієнтів: 1 — постріл, 2 — почалась перезарядка (для анімацій руки й гармати). */
+    public record CannonFx(int entity, byte kind) {
+        static void encode(CannonFx m, FriendlyByteBuf b) {
+            b.writeVarInt(m.entity);
+            b.writeByte(m.kind);
+        }
+
+        static CannonFx decode(FriendlyByteBuf b) {
+            return new CannonFx(b.readVarInt(), b.readByte());
+        }
+
+        static void handle(CannonFx m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                if (m.kind == 1) {
+                    CannonState.FIRED.put(m.entity, CannonState.time);
+                    CannonState.RELOAD_UNTIL.remove(m.entity);
+                } else if (m.kind == 2) {
+                    CannonState.RELOAD_UNTIL.put(m.entity, CannonState.time + Cannon.RELOAD_TICKS);
                 }
             });
             ctx.get().setPacketHandled(true);

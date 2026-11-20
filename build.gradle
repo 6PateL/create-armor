@@ -46,7 +46,8 @@ tasks.named('jar', Jar).configure {
             'Specification-Title'     : mod_id,
             'Specification-Version'   : '1',
             'Implementation-Title'    : project.name,
-            'Implementation-Version'  : project.jar.archiveVersion
+            'Implementation-Version'  : project.jar.archiveVersion,
+            'MixinConfigs'            : 'createarmor.mixins.json'
         ])
     }
     finalizedBy 'reobfJar'
