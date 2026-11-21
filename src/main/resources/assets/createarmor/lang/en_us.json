@@ -20,12 +20,12 @@
   "message.createarmor.charged": "Steam: %s / %s",
   "tooltip.createarmor.no_implant": "Implant: empty",
   "tooltip.createarmor.implant": "Implant: %s",
-  "tooltip.createarmor.set_bonus": "Full set: +4 damage, implant slot",
+  "tooltip.createarmor.set_bonus": "Full set: +4 damage, implant slot, less fall damage, no stamina limits, stable temperature",
   "implant.createarmor.none": "Insert a chestplate or module",
-  "implant.createarmor.chestplate": "Chestplate: armor transferred",
+  "implant.createarmor.chestplate": "Works as the worn chestplate",
   "implant.createarmor.extendo": "Extendo: +3 reach",
   "implant.createarmor.elytra": "Wings: flight and steam boost",
-  "implant.createarmor.cannon": "Arm cannon: RMB with empty hand fires",
+  "implant.createarmor.cannon": "Cannon: hold RMB (empty right hand) to aim, release to fire",
   "block.createarmor.steam_wings": "Steam Wings (charging)",
   "key.createarmor.cannon": "Cannon: reload / pick shell (hold)",
   "message.createarmor.ammo_selected": "Shell: %s",
@@ -41,5 +41,9 @@
   "screen.createarmor.ammo": "Pick a shell",
   "screen.createarmor.no_ammo": "No Create Big Cannons shells in your inventory",
   "screen.createarmor.ammo_hint": "Point at a shell and release the key",
-  "tooltip.createarmor.wings_charge": "Place the wings as a block under a spinning Create shaft to charge them"
+  "tooltip.createarmor.wings_charge": "Place the wings as a block under a spinning Create shaft to charge them",
+  "implant.createarmor.allowed": "Accepted implants:",
+  "implant.createarmor.allowed.backtank": "Create backtank (aqualung)",
+  "implant.createarmor.allowed.octo": "Octo Arms rig",
+  "tooltip.createarmor.temperature": "Full set keeps your temperature stable"
 }

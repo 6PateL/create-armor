@@ -64,8 +64,8 @@ public class SteamArmorItem extends ArmorItem implements GeoItem {
         controllers.add(new AnimationController<>(this, "main", 5, st -> {
             Entity e = st.getData(DataTickets.ENTITY);
             String v = Implants.variant(e);
-            if (e instanceof LivingEntity le && le.isFallFlying() && v.equals("steam_armor_elytra")) {
-                return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_elytra.elytra_glide"));
+            if (v.equals("steam_armor_elytra")) {
+                return st.setAndContinue(WingAnims.pick("steam_armor_elytra", e));
             }
             return st.setAndContinue(RawAnimation.begin().thenLoop("animation." + v + ".idle"));
         }));
@@ -73,9 +73,7 @@ public class SteamArmorItem extends ArmorItem implements GeoItem {
             Entity e = st.getData(DataTickets.ENTITY);
             String v = Implants.variant(e);
             if (v.equals("steam_armor_extendo")) {
-                boolean swing = e instanceof LivingEntity le && le.swinging;
-                return st.setAndContinue(RawAnimation.begin().thenLoop(swing
-                        ? "animation.steam_armor_extendo.extendo_strike" : "animation.steam_armor_extendo.extendo_idle"));
+                return st.setAndContinue(WingAnims.extendo(e));
             }
             if (v.equals("steam_armor_cannon")) {
                 int id = e == null ? -1 : e.getId();
@@ -85,7 +83,7 @@ public class SteamArmorItem extends ArmorItem implements GeoItem {
                 if (CannonState.reloading(id)) {
                     return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_reload"));
                 }
-                if (id == CannonState.localId && CannonState.menuOpen) {
+                if (CannonState.aiming(id) || id == CannonState.localId && CannonState.menuOpen) {
                     return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_aim"));
                 }
                 return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_idle"));

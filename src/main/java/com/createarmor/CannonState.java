@@ -7,6 +7,7 @@ import java.util.Map;
 public final class CannonState {
     public static final Map<Integer, Long> FIRED = new HashMap<>();
     public static final Map<Integer, Long> RELOAD_UNTIL = new HashMap<>();
+    public static final java.util.Set<Integer> AIMING = java.util.concurrent.ConcurrentHashMap.newKeySet();
     public static volatile long time;
     public static volatile int localId = -1;
     public static volatile boolean menuOpen;
@@ -18,6 +19,10 @@ public final class CannonState {
     public static long fireAge(int id) {
         Long t = FIRED.get(id);
         return t == null ? Long.MAX_VALUE : time - t;
+    }
+
+    public static boolean aiming(int id) {
+        return AIMING.contains(id) || id == localId && localAiming;
     }
 
     public static boolean reloading(int id) {

@@ -78,6 +78,7 @@ public class CreateArmor {
         BLOCK_ENTITIES.register(bus);
         bus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
             LiveImplant.registerBacktankSupplier();
+            SetBonus.hookStamina();
             com.simibubi.create.api.stress.BlockStressValues.IMPACTS.register(WINGS_BLOCK.get(), () -> SteamWingsBlockEntity.STRESS);
         }));
         MENUS.register(bus);

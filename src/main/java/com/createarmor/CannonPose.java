@@ -18,7 +18,7 @@ public final class CannonPose {
             m.rightArm.xRot = -1.75F;
             m.rightArm.yRot = -0.75F;
             m.rightArm.zRot = 0.35F;
-        } else if (CannonState.fireAge(id) < 25 || CannonState.reloading(id) && CannonState.fireAge(id) < 40) {
+        } else if (CannonState.aiming(id) || CannonState.fireAge(id) < 12) {
             // рука вперед, по погляду
             m.rightArm.xRot = m.head.xRot - (float) Math.PI / 2F;
             m.rightArm.yRot = m.head.yRot - 0.1F;

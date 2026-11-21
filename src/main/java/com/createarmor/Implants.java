@@ -4,8 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ElytraItem;
-import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -16,7 +14,6 @@ public final class Implants {
 
     public static final String TAG = "Implant";
     private static final EquipmentSlot[] SET = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-    private static final ResourceLocation EXTENDO_GRIP = new ResourceLocation("create", "extendo_grip");
 
     private Implants() {
     }
@@ -51,28 +48,25 @@ public final class Implants {
         }
     }
 
+    /**
+     * Що можна вставити в слот імпланта: лише імпланти (модулі крил, extendo, наручна гармата) та речі, що й так
+     * працюють як імпланти — бектанк Create (акваланг) і риг Octo Arms (вони бачать слот як нагрудник).
+     */
     public static Kind kindOf(ItemStack s) {
         if (s.isEmpty()) {
             return Kind.NONE;
         }
         Item i = s.getItem();
-        if (i == CreateArmor.ELYTRA_MODULE.get() || i == CreateArmor.ELYTRA.get() || i instanceof ElytraItem) {
+        if (i == CreateArmor.ELYTRA_MODULE.get()) {
             return Kind.ELYTRA;
         }
-        if (i == CreateArmor.EXTENDO_MODULE.get() || EXTENDO_GRIP.equals(ForgeRegistries.ITEMS.getKey(i))) {
+        if (i == CreateArmor.EXTENDO_MODULE.get()) {
             return Kind.EXTENDO;
         }
         if (i == CreateArmor.ARM_CANNON.get()) {
             return Kind.CANNON;
         }
-        if (i instanceof SteamArmorItem) {
-            return Kind.NONE;
-        }
-        Equipable eq = Equipable.get(s);
-        if (eq != null && eq.getEquipmentSlot() == EquipmentSlot.CHEST) {
-            return Kind.CHESTPLATE;
-        }
-        return Kind.NONE;
+        return LiveImplant.isBacktank(s) ? Kind.CHESTPLATE : Kind.NONE;
     }
 
     public static boolean allowed(ItemStack s) {

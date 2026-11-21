@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BPB",
+    "MEM",
+    "BTB"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "P": {
+      "item": "create:propeller"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    },
+    "E": {
+      "item": "minecraft:elytra"
+    },
+    "T": {
+      "item": "create:fluid_tank"
+    }
+  },
+  "result": {
+    "item": "createarmor:steam_elytra"
+  }
+}

@@ -25,10 +25,10 @@ public enum SteamMaterial implements ArmorMaterial {
     @Override
     public int getDefenseForType(ArmorItem.Type type) {
         return switch (type) {
-            case HELMET -> 3;
-            case CHESTPLATE -> 9;
-            case LEGGINGS -> 7;
-            case BOOTS -> 3;
+            case HELMET -> 4;
+            case CHESTPLATE -> 10;
+            case LEGGINGS -> 8;
+            case BOOTS -> 4;
         };
     }
 

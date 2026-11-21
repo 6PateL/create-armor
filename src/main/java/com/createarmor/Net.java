@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.util.function.Supplier;
@@ -123,6 +124,7 @@ public final class Net {
                         }
                     }
                     case 2 -> Cannon.select(p, t, m.ammo);
+                    case 3, 4 -> CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> p), new CannonFx(p.getId(), m.action));
                     default -> {
                     }
                 }
@@ -149,6 +151,10 @@ public final class Net {
                     CannonState.RELOAD_UNTIL.remove(m.entity);
                 } else if (m.kind == 2) {
                     CannonState.RELOAD_UNTIL.put(m.entity, CannonState.time + Cannon.RELOAD_TICKS);
+                } else if (m.kind == 3) {
+                    CannonState.AIMING.add(m.entity);
+                } else if (m.kind == 4) {
+                    CannonState.AIMING.remove(m.entity);
                 }
             });
             ctx.get().setPacketHandled(true);

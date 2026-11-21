@@ -1,0 +1,69 @@
+{
+  "required_mods": [
+    "cold_sweat"
+  ],
+  "type": "armor",
+  "item": {
+    "items": [
+      "createarmor:steam_boots"
+    ]
+  },
+  "entity": {
+    "entities": [
+      "*"
+    ],
+    "equipment": {
+      "head": {
+        "items": [
+          "createarmor:steam_helmet"
+        ]
+      },
+      "chest": {
+        "items": [
+          "createarmor:steam_chestplate"
+        ]
+      },
+      "legs": {
+        "items": [
+          "createarmor:steam_leggings"
+        ]
+      },
+      "feet": {
+        "items": [
+          "createarmor:steam_boots"
+        ]
+      }
+    }
+  },
+  "attributes": {
+    "cold_sweat:heat_dampening": [
+      {
+        "name": "createarmor:steam_set",
+        "amount": 0.25,
+        "operation": "addition"
+      }
+    ],
+    "cold_sweat:cold_dampening": [
+      {
+        "name": "createarmor:steam_set",
+        "amount": 0.25,
+        "operation": "addition"
+      }
+    ]
+  },
+  "immune_temp_modifiers": {
+    "cold_sweat:biomes": 1.0,
+    "cold_sweat:cave_biomes": 1.0,
+    "cold_sweat:blocks": 1.0,
+    "cold_sweat:water": 1.0,
+    "cold_sweat:climate": 1.0,
+    "cold_sweat:season": 1.0,
+    "cold_sweat:storm": 1.0,
+    "cold_sweat:freezing": 1.0,
+    "cold_sweat:entities": 1.0,
+    "cold_sweat:shade": 1.0
+  },
+  "hint": {
+    "key": "tooltip.createarmor.temperature"
+  }
+}

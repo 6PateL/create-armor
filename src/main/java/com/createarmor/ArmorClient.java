@@ -63,6 +63,13 @@ public final class ArmorClient {
     public static final KeyMapping CANNON_KEY = new KeyMapping("key.createarmor.cannon", InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_R, "key.categories.createarmor");
     private static int cannonHeld;
+    private static boolean armAiming;
+    private static int armAimTicks;
+
+    /** Наручна гармата готова до ПКМ: імплант стоїть, права рука порожня, ліва теж (інакше ПКМ — для лівої руки). */
+    static boolean armCannonReady(LocalPlayer p) {
+        return Implants.kind(p) == Implants.Kind.CANNON && p.getMainHandItem().isEmpty() && p.getOffhandItem().isEmpty();
+    }
 
     private static float boostCharge;
     private static int heldAtMax;
@@ -116,10 +123,17 @@ public final class ArmorClient {
             addRenderLayer(new AutoGlowingGeoLayer<>(this));
         }
 
+        /** Перша особа: малювати лише цю частину (руку). */
+        net.minecraft.client.model.geom.ModelPart onlyPart;
+        HumanoidModel<?> onlyModel;
+
         @Override
         public void preRender(PoseStack pose, T animatable, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
                               boolean reRender, float partialTick, int light, int overlay, float r, float g, float b, float a) {
             super.preRender(pose, animatable, model, buffers, buffer, reRender, partialTick, light, overlay, r, g, b, a);
+            if (onlyPart != null) {
+                applyBoneVisibilityByPart(EquipmentSlot.CHEST, onlyPart, onlyModel);
+            }
             if (getCurrentEntity() instanceof LivingEntity le) {
                 float fill = Steam.energy(le) / (float) Steam.MAX;
                 model.getBone("charge_bar").ifPresent(bone -> bone.setScaleX(Math.max(0.02F, fill)));
@@ -237,6 +251,14 @@ public final class ArmorClient {
             ItemStack in = menu.slots.get(0).getItem();
             Component kind = Component.translatable("implant.createarmor." + Implants.kindOf(in).name().toLowerCase(java.util.Locale.ROOT));
             g.drawString(font, kind, (imageWidth - font.width(kind)) / 2, 58, 0xFFB8A888, false);
+            // що можна вставити — праворуч від вікна
+            int hx = imageWidth + 6;
+            g.drawString(font, Component.translatable("implant.createarmor.allowed"), hx, 6, 0xFFE8C77A, true);
+            String[] keys = {"item.createarmor.steam_elytra_module", "item.createarmor.steam_extendo_module",
+                    "item.createarmor.steam_arm_cannon", "implant.createarmor.allowed.backtank", "implant.createarmor.allowed.octo"};
+            for (int i = 0; i < keys.length; i++) {
+                g.drawString(font, Component.literal("• ").append(Component.translatable(keys[i])), hx, 20 + i * 11, 0xFFD8C8A8, true);
+            }
         }
 
         @Override
@@ -320,7 +342,18 @@ public final class ArmorClient {
             }
             CannonState.time = p.level().getGameTime();
             CannonState.localId = p.getId();
-            CannonState.localAiming = p.isUsingItem() && p.getUseItem().getItem() instanceof SteamCannonItem;
+            if (armAiming) {
+                if (mc.options.keyUse.isDown() && armCannonReady(p) && mc.screen == null) {
+                    armAimTicks++;
+                } else {
+                    armAiming = false;
+                    Net.CHANNEL.sendToServer(new Net.CannonAction((byte) 4, (byte) Cannon.Target.ARM.ordinal(), ""));
+                    if (armCannonReady(p) && mc.screen == null) {
+                        Net.CHANNEL.sendToServer(new Net.CannonAction((byte) 1, (byte) Cannon.Target.ARM.ordinal(), ""));
+                    }
+                }
+            }
+            CannonState.localAiming = p.isUsingItem() && p.getUseItem().getItem() instanceof SteamCannonItem || armAiming;
             Cannon.Target ct = Cannon.target(p);
             if (CANNON_KEY.isDown() && mc.screen == null && ct != null) {
                 cannonHeld++;
@@ -370,26 +403,32 @@ public final class ArmorClient {
             wasJump = jump;
         }
 
-        /** ПКМ порожньою рукою з наручною гарматою — постріл (якщо не дивишся на блок поруч, щоб двері й скрині працювали). */
+        /**
+         * Наручна гармата: затиснути ПКМ порожньою правою рукою — прицілитися (рука вперед, наближення), відпустити —
+         * постріл. Якщо в лівій руці щось є, ПКМ працює для лівої руки як звичайно; на блок поруч — теж звичайно.
+         */
         @SubscribeEvent
         public static void onUse(InputEvent.InteractionKeyMappingTriggered e) {
             Minecraft mc = Minecraft.getInstance();
             LocalPlayer p = mc.player;
-            if (p == null || !e.isUseItem() || e.getHand() != InteractionHand.MAIN_HAND || !p.getMainHandItem().isEmpty()
-                    || Implants.kind(p) != Implants.Kind.CANNON) {
+            if (p == null || !e.isUseItem() || e.getHand() != InteractionHand.MAIN_HAND || !armCannonReady(p)) {
                 return;
             }
-            if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
+            if (!armAiming && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
                 return;
             }
             e.setCanceled(true);
             e.setSwingHand(false);
-            Net.CHANNEL.sendToServer(new Net.CannonAction((byte) 1, (byte) Cannon.Target.ARM.ordinal(), ""));
+            if (!armAiming) {
+                armAiming = true;
+                armAimTicks = 0;
+                Net.CHANNEL.sendToServer(new Net.CannonAction((byte) 3, (byte) Cannon.Target.ARM.ordinal(), ""));
+            }
         }
 
         @SubscribeEvent
         public static void fov(ComputeFovModifierEvent e) {
-            if (e.getPlayer().isUsingItem() && e.getPlayer().getUseItem().getItem() instanceof SteamCannonItem) {
+            if (e.getPlayer().isUsingItem() && e.getPlayer().getUseItem().getItem() instanceof SteamCannonItem || armAiming) {
                 e.setNewFovModifier(e.getFovModifier() * 0.82F);
             }
         }

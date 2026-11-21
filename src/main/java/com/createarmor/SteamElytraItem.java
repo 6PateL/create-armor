@@ -89,12 +89,9 @@ public class SteamElytraItem extends ArmorItem implements GeoItem {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 5, st -> {
+        controllers.add(new AnimationController<>(this, "main", 4, st -> {
             Entity e = st.getData(DataTickets.ENTITY);
-            if (e instanceof LivingEntity le && le.isFallFlying()) {
-                return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_elytra.elytra_glide"));
-            }
-            return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_elytra.idle"));
+            return st.setAndContinue(WingAnims.pick("steam_elytra", e));
         }));
     }
 

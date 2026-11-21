@@ -20,12 +20,12 @@
   "message.createarmor.charged": "Пара: %s / %s",
   "tooltip.createarmor.no_implant": "Імплант: порожньо",
   "tooltip.createarmor.implant": "Імплант: %s",
-  "tooltip.createarmor.set_bonus": "Повний сет: +4 шкоди, слот імпланта",
+  "tooltip.createarmor.set_bonus": "Повний сет: +4 шкоди, слот імпланта, менше шкоди від падіння, без утоми, стабільна температура",
   "implant.createarmor.none": "Вставте нагрудник або модуль",
-  "implant.createarmor.chestplate": "Нагрудник: броня передається",
+  "implant.createarmor.chestplate": "Працює як вдягнений нагрудник",
   "implant.createarmor.extendo": "Extendo: +3 досяжності",
   "implant.createarmor.elytra": "Крила: політ і паровий поштовх",
-  "implant.createarmor.cannon": "Наручна гармата: ПКМ порожньою рукою — постріл",
+  "implant.createarmor.cannon": "Гармата: затиснути ПКМ (права рука порожня) — ціль, відпустити — постріл",
   "block.createarmor.steam_wings": "Парові крила (на зарядці)",
   "key.createarmor.cannon": "Гармата: перезарядка / вибір снаряда (утримати)",
   "message.createarmor.ammo_selected": "Снаряд: %s",
@@ -41,5 +41,9 @@
   "screen.createarmor.ammo": "Вибір снаряда",
   "screen.createarmor.no_ammo": "В інвентарі немає снарядів Create Big Cannons",
   "screen.createarmor.ammo_hint": "Наведи на снаряд і відпусти клавішу",
-  "tooltip.createarmor.wings_charge": "Поставте крила блоком під вал Create, що крутиться, — так вони заряджаються"
+  "tooltip.createarmor.wings_charge": "Поставте крила блоком під вал Create, що крутиться, — так вони заряджаються",
+  "implant.createarmor.allowed": "Можна вставити:",
+  "implant.createarmor.allowed.backtank": "Бектанк Create (акваланг)",
+  "implant.createarmor.allowed.octo": "Риг Octo Arms",
+  "tooltip.createarmor.temperature": "Повний сет тримає стабільну температуру"
 }

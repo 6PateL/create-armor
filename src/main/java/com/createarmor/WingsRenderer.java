@@ -36,6 +36,8 @@ public class WingsRenderer extends GeoBlockRenderer<SteamWingsBlockEntity> {
                           boolean reRender, float partialTick, int light, int overlay, float r, float g, float b, float a) {
         super.preRender(pose, be, model, buffers, buffer, reRender, partialTick, light, overlay, r, g, b, a);
         if (!reRender) {
+            // спиною (кінетичним портом) до FACING — туди, де під'єднується вал; лицем до гравця
+            pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180F));
             pose.translate(0, -7.5 / 16.0, -3.8 / 16.0);
         }
         float fill = be.energy() / (float) Steam.MAX;
