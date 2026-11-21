@@ -101,6 +101,12 @@ public final class ArmorClient {
             return fixed != null ? fixed : variant;
         }
 
+        void setVariant(String v) {
+            if (fixed == null) {
+                variant = v;
+            }
+        }
+
         @Override
         public ResourceLocation getModelResource(T a) {
             return new ResourceLocation(CreateArmor.MOD_ID, "geo/armor/" + name() + ".geo.json");
@@ -121,6 +127,38 @@ public final class ArmorClient {
         SteamArmorRenderer(String fixed) {
             super(new SteamModel<>(fixed));
             addRenderLayer(new AutoGlowingGeoLayer<>(this));
+        }
+
+        /** Варіант моделі (за імплантом) — щоразу перед рендером, у будь-якому шляху (перша особа теж). */
+        @Override
+        public void prepForRender(Entity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> base) {
+            super.prepForRender(entity, stack, slot, base);
+            if (getGeoModel() instanceof SteamModel<?> m) {
+                m.setVariant(Implants.variant(entity));
+            }
+        }
+
+        /**
+         * У першій особі рука вже дивиться вперед, тож підйом гармати з анімацій (cannon_arm/cannon_forearm) зайвий —
+         * інакше під час прицілювання гармата задирається вгору-вліво. Решта (ствол, снаряд, пара) анімується.
+         */
+        @Override
+        public void renderRecursively(PoseStack pose, T animatable, software.bernie.geckolib.cache.object.GeoBone bone,
+                                      net.minecraft.client.renderer.RenderType type, MultiBufferSource buffers, VertexConsumer buffer,
+                                      boolean reRender, float partialTick, int light, int overlay, float r, float g, float b, float a) {
+            if (onlyPart != null && (bone.getName().equals("cannon_arm") || bone.getName().equals("cannon_forearm"))) {
+                float rx = bone.getRotX(), ry = bone.getRotY(), rz = bone.getRotZ();
+                var init = bone.getInitialSnapshot();
+                bone.setRotX(init.getRotX());
+                bone.setRotY(init.getRotY());
+                bone.setRotZ(init.getRotZ());
+                super.renderRecursively(pose, animatable, bone, type, buffers, buffer, reRender, partialTick, light, overlay, r, g, b, a);
+                bone.setRotX(rx);
+                bone.setRotY(ry);
+                bone.setRotZ(rz);
+                return;
+            }
+            super.renderRecursively(pose, animatable, bone, type, buffers, buffer, reRender, partialTick, light, overlay, r, g, b, a);
         }
 
         /** Перша особа: малювати лише цю частину (руку). */
