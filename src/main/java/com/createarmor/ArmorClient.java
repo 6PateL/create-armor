@@ -167,7 +167,7 @@ public final class ArmorClient {
             if (Implants.kindOf(imp) != Implants.Kind.CHESTPLATE || LiveImplant.isBacktank(imp)) {
                 return;
             }
-            getParentModel().copyPropertiesTo(base);
+            copyProps(getParentModel(), base);
             base.setAllVisible(false);
             base.body.visible = true;
             base.rightArm.visible = true;
@@ -183,6 +183,11 @@ public final class ArmorClient {
                 m.renderToBuffer(pose, vc, light, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
             }
             pose.popPose();
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private static void copyProps(HumanoidModel from, HumanoidModel to) {
+            from.copyPropertiesTo(to);
         }
 
         private static ResourceLocation texture(Entity e, ItemStack s) {
