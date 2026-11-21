@@ -30,9 +30,15 @@ public final class SteamFirstPerson {
     private SteamFirstPerson() {
     }
 
+    /** renderRightHand сам знову кидає RenderArmEvent — без цього прапорця нескінченна рекурсія. */
+    private static boolean inside;
+
     @SubscribeEvent
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void onArm(RenderArmEvent e) {
+        if (inside) {
+            return;
+        }
         AbstractClientPlayer p = e.getPlayer();
         ItemStack chest = p.getItemBySlot(EquipmentSlot.CHEST);
         if (!(chest.getItem() instanceof SteamArmorItem)) {
@@ -44,10 +50,15 @@ public final class SteamFirstPerson {
         e.setCanceled(true);
         boolean right = e.getArm() == HumanoidArm.RIGHT;
         // спершу звичайна рука гравця (як у ванілі), потім поверх — нарукавник
-        if (right) {
-            pr.renderRightHand(e.getPoseStack(), e.getMultiBufferSource(), e.getPackedLight(), p);
-        } else {
-            pr.renderLeftHand(e.getPoseStack(), e.getMultiBufferSource(), e.getPackedLight(), p);
+        inside = true;
+        try {
+            if (right) {
+                pr.renderRightHand(e.getPoseStack(), e.getMultiBufferSource(), e.getPackedLight(), p);
+            } else {
+                pr.renderLeftHand(e.getPoseStack(), e.getMultiBufferSource(), e.getPackedLight(), p);
+            }
+        } finally {
+            inside = false;
         }
         PlayerModel<AbstractClientPlayer> model = pr.getModel();
         HumanoidModel<?> armor = IClientItemExtensions.of(chest).getHumanoidArmorModel(p, chest, EquipmentSlot.CHEST, model);

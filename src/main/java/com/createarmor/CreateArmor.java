@@ -69,6 +69,14 @@ public class CreateArmor {
                         out.accept(i.get());
                     }
                 }
+                // те, що теж вставляється в слот імпланта: акваланги Create і риги Octo Arms
+                for (String id : new String[]{"create:copper_backtank", "create:netherite_backtank",
+                        "tentaworks:copper_tentacle_rig", "tentaworks:netherite_tentacle_rig"}) {
+                    Item it = ForgeRegistries.ITEMS.getValue(new net.minecraft.resources.ResourceLocation(id));
+                    if (it != null && it != net.minecraft.world.item.Items.AIR) {
+                        out.accept(it);
+                    }
+                }
             }).build());
 
     public CreateArmor() {
