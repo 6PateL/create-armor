@@ -105,19 +105,7 @@ public class SteamCannonItem extends Item implements GeoItem {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 2, st -> {
-            int id = CannonState.localId;
-            if (CannonState.fireAge(id) < 16) {
-                return st.setAndContinue(RawAnimation.begin().thenPlay("animation.steam_cannon.fire"));
-            }
-            if (CannonState.reloading(id)) {
-                return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_cannon.reload"));
-            }
-            if (CannonState.localAiming) {
-                return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_cannon.spinup"));
-            }
-            return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_cannon.idle"));
-        }));
+        controllers.add(new AnimationController<>(this, "main", 2, st -> st.setAndContinue(WingAnims.handCannon())));
     }
 
     @Override

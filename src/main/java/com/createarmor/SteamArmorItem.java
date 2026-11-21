@@ -76,17 +76,7 @@ public class SteamArmorItem extends ArmorItem implements GeoItem {
                 return st.setAndContinue(WingAnims.extendo(e));
             }
             if (v.equals("steam_armor_cannon")) {
-                int id = e == null ? -1 : e.getId();
-                if (CannonState.fireAge(id) < 16) {
-                    return st.setAndContinue(RawAnimation.begin().thenPlay("animation.steam_armor_cannon.cannon_fire"));
-                }
-                if (CannonState.reloading(id)) {
-                    return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_reload"));
-                }
-                if (CannonState.aiming(id) || id == CannonState.localId && CannonState.menuOpen) {
-                    return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_aim"));
-                }
-                return st.setAndContinue(RawAnimation.begin().thenLoop("animation.steam_armor_cannon.cannon_idle"));
+                return st.setAndContinue(WingAnims.armCannon(e));
             }
             return PlayState.STOP;
         }));

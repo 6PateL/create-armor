@@ -50,6 +50,7 @@ public final class SteamFirstPerson {
         e.setCanceled(true);
         boolean right = e.getArm() == HumanoidArm.RIGHT;
         // спершу звичайна рука гравця (як у ванілі), потім поверх — нарукавник
+        // (з наручною гарматою власну праву руку ховає CannonPose — малюється лише броня)
         inside = true;
         try {
             if (right) {
