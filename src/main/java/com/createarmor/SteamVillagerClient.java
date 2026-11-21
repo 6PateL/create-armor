@@ -22,7 +22,8 @@ import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
- * Рота забезпечення (Train Recruits, жителі з позначкою «[+]») у вимірі плоті виглядає як жителі в паровому обладунку.
+ * Рота забезпечення й розрахунки гармат (Train Recruits) у вимірі плоті виглядають як жителі в паровому обладунку
+ * (сервер повідомляє, кого саме — SteamLookSync).
  * Це лише вигляд: захист від зараження дає сам вимір плоті (Flesh Spread пропускає роту).
  */
 @Mod.EventBusSubscriber(modid = CreateArmor.MOD_ID, value = Dist.CLIENT)
@@ -64,8 +65,16 @@ public final class SteamVillagerClient {
         if (!v.level().dimension().location().equals(FLESH)) {
             return false;
         }
+        if (CannonState.STEAM_VILLAGERS.contains(v.getId())) {
+            return true;
+        }
         Component n = v.getCustomName();
         return n != null && n.getString().startsWith("[+]");
+    }
+
+    @SubscribeEvent
+    public static void onLogout(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) {
+        CannonState.STEAM_VILLAGERS.clear();
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)

@@ -32,6 +32,7 @@ public final class Net {
         CHANNEL.registerMessage(1, Boost.class, Boost::encode, Boost::decode, Boost::handle);
         CHANNEL.registerMessage(2, CannonAction.class, CannonAction::encode, CannonAction::decode, CannonAction::handle);
         CHANNEL.registerMessage(3, CannonFx.class, CannonFx::encode, CannonFx::decode, CannonFx::handle);
+        CHANNEL.registerMessage(4, SteamLook.class, (m, b) -> b.writeVarInt(m.entity()), b -> new SteamLook(b.readVarInt()), SteamLook::handle);
     }
 
     /** Клавіша імпланта: відкрити слот (лише в повному сеті). */
@@ -157,6 +158,14 @@ public final class Net {
                     CannonState.AIMING.remove(m.entity);
                 }
             });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Житель роти/розрахунку у вимірі плоті: показувати його в паровому обладунку. */
+    public record SteamLook(int entity) {
+        static void handle(SteamLook m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> CannonState.STEAM_VILLAGERS.add(m.entity));
             ctx.get().setPacketHandled(true);
         }
     }

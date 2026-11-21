@@ -31,14 +31,21 @@ public class WingsRenderer extends GeoBlockRenderer<SteamWingsBlockEntity> {
         addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 
+    /** Спиною (кінетичним портом) до FACING — туди, де під'єднується вал; лицем до гравця. */
+    @Override
+    protected net.minecraft.core.Direction getFacing(SteamWingsBlockEntity be) {
+        return super.getFacing(be).getOpposite();
+    }
+
     @Override
     public void preRender(PoseStack pose, SteamWingsBlockEntity be, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
                           boolean reRender, float partialTick, int light, int overlay, float r, float g, float b, float a) {
         super.preRender(pose, be, model, buffers, buffer, reRender, partialTick, light, overlay, r, g, b, a);
-        if (!reRender) {
-            // спиною (кінетичним портом) до FACING — туди, де під'єднується вал; лицем до гравця
-            pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180F));
-            pose.translate(0, -7.5 / 16.0, -3.8 / 16.0);
+        // опустити модель на землю й відцентрувати в блоці (зсув кореневих кісток у пікселях моделі —
+        // GeckoLib сам повертає блок за FACING довкола центру, тож трансформації PoseStack тут не годяться)
+        for (software.bernie.geckolib.cache.object.GeoBone bone : model.topLevelBones()) {
+            bone.setPosY(-7.5F);
+            bone.setPosZ(-3.8F);
         }
         float fill = be.energy() / (float) Steam.MAX;
         model.getBone("charge_bar").ifPresent(bone -> bone.setScaleX(Math.max(0.02F, fill)));

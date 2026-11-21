@@ -75,6 +75,22 @@ public class ImplantMenu extends AbstractContainerMenu {
         return copy;
     }
 
+    /** Закрили меню: клієнт одразу бачить новий імплант (модель руки, приціл), не чекаючи синхронізації. */
+    @Override
+    public void removed(Player p) {
+        super.removed(p);
+        ItemStack chest = p.getItemBySlot(EquipmentSlot.CHEST);
+        if (chest.getItem() != CreateArmor.CHESTPLATE.get()) {
+            return;
+        }
+        if (p.level().isClientSide) {
+            Implants.setImplant(chest, slots.get(0).getItem().copy());
+        } else if (p instanceof net.minecraft.server.level.ServerPlayer sp) {
+            save();
+            sp.inventoryMenu.sendAllDataToRemote();
+        }
+    }
+
     @Override
     public boolean stillValid(Player p) {
         return Implants.fullSet(p) && p.getItemBySlot(EquipmentSlot.CHEST).getItem() == CreateArmor.CHESTPLATE.get();

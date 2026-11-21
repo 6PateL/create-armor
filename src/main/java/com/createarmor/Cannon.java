@@ -205,6 +205,53 @@ public final class Cannon {
         }
     }
 
+    /**
+     * Постріл не гравця (рекрут із паровою гарматою): шрапнель з ударним запалом по цілі з невеликим упередженням на
+     * падіння снаряда. Без витрат набоїв — у солдатів свій запас.
+     */
+    public static boolean fireFromMob(net.minecraft.world.entity.Mob mob, net.minecraft.world.entity.LivingEntity target) {
+        Level level = mob.level();
+        Item ammo = ForgeRegistries.ITEMS.getValue(new ResourceLocation("createbigcannons", "shrapnel_shell"));
+        if (ammo == null || ammo == net.minecraft.world.item.Items.AIR) {
+            ammo = ForgeRegistries.ITEMS.getValue(new ResourceLocation("createbigcannons", "solid_shot"));
+        }
+        if (ammo == null || ammo == net.minecraft.world.item.Items.AIR) {
+            return false;
+        }
+        Entity shell = spawnShell(level, new ItemStack(ammo));
+        if (shell == null) {
+            return false;
+        }
+        Vec3 eye = mob.getEyePosition();
+        Vec3 aim = target.position().add(0, target.getBbHeight() * 0.5, 0);
+        double dist = aim.distanceTo(eye);
+        double flight = dist / SPEED_HAND;
+        aim = aim.add(target.getDeltaMovement().scale(flight)).add(0, 0.025 * flight * flight, 0);
+        Vec3 dir = aim.subtract(eye).normalize();
+        Vec3 right = dir.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 muzzle = eye.add(dir.scale(1.0)).add(right.scale(0.25)).add(0, -0.25, 0);
+        call(shell, "setChargePower", new Class<?>[]{float.class}, SPEED_HAND);
+        shell.setPos(muzzle);
+        if (shell instanceof Projectile pr) {
+            pr.setOwner(mob);
+            pr.shoot(dir.x, dir.y, dir.z, SPEED_HAND, 1.2F);
+        } else {
+            shell.setDeltaMovement(dir.scale(SPEED_HAND));
+        }
+        call(shell, "addUntouchableEntity", new Class<?>[]{Entity.class, int.class}, mob, 4);
+        level.addFreshEntity(shell);
+        SoundEvent boom = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("createbigcannons", "fire_big_cannon"));
+        level.playSound(null, muzzle.x, muzzle.y, muzzle.z, boom != null ? boom : SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F, 1.25F);
+        if (level instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.LARGE_SMOKE, muzzle.x, muzzle.y, muzzle.z, 14, 0.2, 0.2, 0.2, 0.04);
+            sl.sendParticles(ParticleTypes.FLAME, muzzle.x, muzzle.y, muzzle.z, 8, 0.1, 0.1, 0.1, 0.06);
+            sl.sendParticles(ParticleTypes.CLOUD, muzzle.x, muzzle.y, muzzle.z, 6, 0.1, 0.2, 0.1, 0.03);
+        }
+        mob.swing(InteractionHand.MAIN_HAND, true);
+        Net.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> mob), new Net.CannonFx(mob.getId(), (byte) 1));
+        return true;
+    }
+
     private static Entity spawnShell(Level level, ItemStack round) {
         if (!(round.getItem() instanceof BlockItem bi)) {
             return null;

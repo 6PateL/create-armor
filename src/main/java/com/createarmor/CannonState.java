@@ -7,6 +7,8 @@ import java.util.Map;
 public final class CannonState {
     public static final Map<Integer, Long> FIRED = new HashMap<>();
     public static final Map<Integer, Long> RELOAD_UNTIL = new HashMap<>();
+    /** Жителі (рота забезпечення, розрахунки), яких показувати в паровому обладунку у вимірі плоті. */
+    public static final java.util.Set<Integer> STEAM_VILLAGERS = java.util.concurrent.ConcurrentHashMap.newKeySet();
     public static final java.util.Set<Integer> AIMING = java.util.concurrent.ConcurrentHashMap.newKeySet();
     public static volatile long time;
     public static volatile int localId = -1;
