@@ -14,9 +14,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Pseudo
 @Mixin(targets = {"dev.tentaworks.client.TentacleLayer", "dev.tentaworks.client.RigSettingsScreen"}, remap = false)
 public abstract class TentaworksClientMixin {
+    // TentacleLayer.render — метод екземпляра, тож обробник теж не static
     @Redirect(method = "*", require = 0, remap = false, at = @At(value = "INVOKE", remap = false,
             target = "Lnet/minecraft/client/player/AbstractClientPlayer;m_6844_(Lnet/minecraft/world/entity/EquipmentSlot;)Lnet/minecraft/world/item/ItemStack;"))
-    private static ItemStack createarmor$abstract(AbstractClientPlayer p, EquipmentSlot slot) {
+    private ItemStack createarmor$abstract(AbstractClientPlayer p, EquipmentSlot slot) {
         return LiveImplant.chest(p, slot);
     }
 
